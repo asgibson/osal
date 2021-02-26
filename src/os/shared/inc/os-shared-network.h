@@ -25,12 +25,11 @@
  *
  */
 
-#ifndef INCLUDE_OS_SHARED_NETWORK_H_
-#define INCLUDE_OS_SHARED_NETWORK_H_
+#ifndef OS_SHARED_NETWORK_H
+#define OS_SHARED_NETWORK_H
 
+#include "osapi-network.h"
 #include <os-shared-globaldefs.h>
-
-
 
 /****************************************************************************************
               NETWORK / SOCKET API LOW-LEVEL IMPLEMENTATION FUNCTIONS
@@ -43,8 +42,7 @@
 
    returns: OS_SUCCESS on success, or relevant error code
 ---------------------------------------------------------------------------------------*/
-int32 OS_NetworkAPI_Init             (void);
-
+int32 OS_NetworkAPI_Init(void);
 
 /*----------------------------------------------------------------
 
@@ -54,7 +52,7 @@ int32 OS_NetworkAPI_Init             (void);
 
     Returns: OS_SUCCESS on success, or relevant error code
  ------------------------------------------------------------------*/
-int32 OS_NetworkGetHostName_Impl (char *host_name, uint32 name_len);
+int32 OS_NetworkGetHostName_Impl(char *host_name, size_t name_len);
 
 /*----------------------------------------------------------------
    Function: OS_NetworkGetID_Impl
@@ -63,7 +61,6 @@ int32 OS_NetworkGetHostName_Impl (char *host_name, uint32 name_len);
 
     Returns: the ID value on success, or -1 on error.
  ------------------------------------------------------------------*/
-int32 OS_NetworkGetID_Impl       (int32 *IdBuf);
+int32 OS_NetworkGetID_Impl(int32 *IdBuf);
 
-#endif  /* INCLUDE_OS_SHARED_NETWORK_H_ */
-
+#endif /* OS_SHARED_NETWORK_H  */

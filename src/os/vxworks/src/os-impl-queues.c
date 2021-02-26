@@ -32,17 +32,16 @@
 #include "os-impl-queues.h"
 #include "os-shared-queue.h"
 #include "os-shared-timebase.h"
-
+#include "os-shared-idmap.h"
 
 /****************************************************************************************
                                    GLOBAL DATA
 ****************************************************************************************/
-OS_impl_queue_internal_record_t OS_impl_queue_table     [OS_MAX_QUEUES];
+OS_impl_queue_internal_record_t OS_impl_queue_table[OS_MAX_QUEUES];
 
 /****************************************************************************************
                                 MESSAGE QUEUE API
 ****************************************************************************************/
-
 
 /*----------------------------------------------------------------
  *
@@ -57,7 +56,6 @@ int32 OS_VxWorks_QueueAPI_Impl_Init(void)
     return (OS_SUCCESS);
 } /* end OS_VxWorks_QueueAPI_Impl_Init */
 
-
 /*----------------------------------------------------------------
  *
  * Function: OS_QueueCreate_Impl
@@ -66,27 +64,34 @@ int32 OS_VxWorks_QueueAPI_Impl_Init(void)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_QueueCreate_Impl (uint32 queue_id, uint32 flags)
+int32 OS_QueueCreate_Impl(const OS_object_token_t *token, uint32 flags)
 {
-    MSG_Q_ID tmp_msgq_id;
-    int queue_depth = OS_queue_table[queue_id].max_depth; /* maximum number of messages in queue (queue depth) */
-    int data_size = OS_queue_table[queue_id].max_size;    /* maximum size in bytes of a message */
+    MSG_Q_ID                         tmp_msgq_id;
+    int                              queue_depth;
+    int                              data_size;
+    OS_impl_queue_internal_record_t *impl;
+    OS_queue_internal_record_t *     queue;
+
+    impl  = OS_OBJECT_TABLE_GET(OS_impl_queue_table, *token);
+    queue = OS_OBJECT_TABLE_GET(OS_queue_table, *token);
+
+    queue_depth = queue->max_depth; /* maximum number of messages in queue (queue depth) */
+    data_size   = queue->max_size;  /* maximum size in bytes of a message */
 
     /* Create VxWorks Message Queue */
     tmp_msgq_id = msgQCreate(queue_depth, data_size, MSG_Q_FIFO);
 
     /* check if message Q create failed */
-    if(tmp_msgq_id == 0)
+    if (tmp_msgq_id == 0)
     {
-        OS_DEBUG("msgQCreate() - vxWorks errno %d\n",errno);
+        OS_DEBUG("msgQCreate() - vxWorks errno %d\n", errno);
         return OS_ERROR;
     }
 
-    OS_impl_queue_table[queue_id].vxid = tmp_msgq_id;
+    impl->vxid = tmp_msgq_id;
     return OS_SUCCESS;
 
 } /* end OS_QueueCreate_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -96,21 +101,23 @@ int32 OS_QueueCreate_Impl (uint32 queue_id, uint32 flags)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_QueueDelete_Impl (uint32 queue_id)
+int32 OS_QueueDelete_Impl(const OS_object_token_t *token)
 {
+    OS_impl_queue_internal_record_t *impl;
+
+    impl = OS_OBJECT_TABLE_GET(OS_impl_queue_table, *token);
+
     /* Try to delete the queue */
-    if (msgQDelete(OS_impl_queue_table[queue_id].vxid) != OK)
+    if (msgQDelete(impl->vxid) != OK)
     {
-        OS_DEBUG("msgQDelete() - vxWorks errno %d\n",errno);
+        OS_DEBUG("msgQDelete() - vxWorks errno %d\n", errno);
         return OS_ERROR;
     }
 
-    OS_impl_queue_table[queue_id].vxid = 0;
+    impl->vxid = 0;
     return OS_SUCCESS;
 
 } /* end OS_QueueDelete_Impl */
-
-
 
 /*----------------------------------------------------------------
  *
@@ -120,12 +127,14 @@ int32 OS_QueueDelete_Impl (uint32 queue_id)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_QueueGet_Impl (uint32 queue_id, void *data, uint32 size, uint32 *size_copied,
-                    int32 timeout)
+int32 OS_QueueGet_Impl(const OS_object_token_t *token, void *data, size_t size, size_t *size_copied, int32 timeout)
 {
-    int32              return_code;
-    STATUS             status;
-    int                ticks;
+    int32                            return_code;
+    STATUS                           status;
+    int                              ticks;
+    OS_impl_queue_internal_record_t *impl;
+
+    impl = OS_OBJECT_TABLE_GET(OS_impl_queue_table, *token);
 
     /* Get Message From Message Queue */
     if (timeout == OS_PEND)
@@ -145,9 +154,9 @@ int32 OS_QueueGet_Impl (uint32 queue_id, void *data, uint32 size, uint32 *size_c
         }
     }
 
-    status = msgQReceive(OS_impl_queue_table[queue_id].vxid, data, size, ticks);
+    status = msgQReceive(impl->vxid, data, size, ticks);
 
-    if(status == ERROR)
+    if (status == ERROR)
     {
         *size_copied = 0;
         if (errno == S_objLib_OBJ_TIMEOUT)
@@ -160,19 +169,18 @@ int32 OS_QueueGet_Impl (uint32 queue_id, void *data, uint32 size, uint32 *size_c
         }
         else
         {
-            OS_DEBUG("msgQReceive() - vxWorks errno %d\n",errno);
+            OS_DEBUG("msgQReceive() - vxWorks errno %d\n", errno);
             return_code = OS_ERROR;
         }
     }
     else
     {
-        *size_copied = status;
-        return_code = OS_SUCCESS;
+        *size_copied = OSAL_SIZE_C(status);
+        return_code  = OS_SUCCESS;
     }
 
     return return_code;
 } /* end OS_QueueGet_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -182,28 +190,30 @@ int32 OS_QueueGet_Impl (uint32 queue_id, void *data, uint32 size, uint32 *size_c
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_QueuePut_Impl (uint32 queue_id, const void *data, uint32 size, uint32 flags)
+int32 OS_QueuePut_Impl(const OS_object_token_t *token, const void *data, size_t size, uint32 flags)
 {
-    int32              return_code;
+    int32                            return_code;
+    OS_impl_queue_internal_record_t *impl;
 
-    if(msgQSend(OS_impl_queue_table[queue_id].vxid, (void*)data, size, NO_WAIT, MSG_PRI_NORMAL) == OK)
+    impl = OS_OBJECT_TABLE_GET(OS_impl_queue_table, *token);
+
+    if (msgQSend(impl->vxid, (void *)data, size, NO_WAIT, MSG_PRI_NORMAL) == OK)
     {
         return_code = OS_SUCCESS;
     }
-    else if(errno == S_objLib_OBJ_UNAVAILABLE)
+    else if (errno == S_objLib_OBJ_UNAVAILABLE)
     {
         return_code = OS_QUEUE_FULL;
     }
     else
     {
-        OS_DEBUG("msgQSend() - vxWorks errno %d\n",errno);
+        OS_DEBUG("msgQSend() - vxWorks errno %d\n", errno);
         return_code = OS_ERROR;
     }
 
     return return_code;
 
 } /* end OS_QueuePut_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -213,10 +223,9 @@ int32 OS_QueuePut_Impl (uint32 queue_id, const void *data, uint32 size, uint32 f
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_QueueGetInfo_Impl (uint32 queue_id, OS_queue_prop_t *queue_prop)
+int32 OS_QueueGetInfo_Impl(const OS_object_token_t *token, OS_queue_prop_t *queue_prop)
 {
     /* No extra info for queues in the OS implementation */
     return OS_SUCCESS;
 
 } /* end OS_QueueGetInfo_Impl */
-

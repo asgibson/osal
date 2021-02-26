@@ -25,16 +25,15 @@
  *
  */
 
-#ifndef INCLUDE_UT_ADAPTOR_BINSEM_H_
-#define INCLUDE_UT_ADAPTOR_BINSEM_H_
+#ifndef UT_ADAPTOR_BINSEM_H
+#define UT_ADAPTOR_BINSEM_H
 
-#include <common_types.h>
+#include "common_types.h"
 #include <utstubs.h>
 #include <OCS_taskLib.h>
 #include <OCS_semLib.h>
 
-
-extern void*  const UT_Ref_OS_impl_bin_sem_table;
+extern void *const  UT_Ref_OS_impl_bin_sem_table;
 extern size_t const UT_Ref_OS_impl_bin_sem_table_SIZE;
 
 /*
@@ -49,5 +48,4 @@ extern const UT_EntryKey_t UT_StubKey_GenericSemGive;
 
 extern int32 UT_Call_OS_VxWorks_BinSemAPI_Impl_Init(void);
 
-#endif  /* INCLUDE_UT_ADAPTOR_BINSEM_H_ */
-
+#endif /* UT_ADAPTOR_BINSEM_H  */

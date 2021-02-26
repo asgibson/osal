@@ -57,6 +57,7 @@
 #include "os-shared-file.h"
 #include "os-shared-select.h"
 #include "os-shared-sockets.h"
+#include "os-shared-idmap.h"
 
 /****************************************************************************************
                                      DEFINES
@@ -64,19 +65,17 @@
 
 typedef union
 {
-   char data[OS_SOCKADDR_MAX_LEN];
-   struct sockaddr sockaddr;
-   struct sockaddr_in sockaddr_in;
+    char               data[OS_SOCKADDR_MAX_LEN];
+    struct sockaddr    sockaddr;
+    struct sockaddr_in sockaddr_in;
 #ifdef OS_NETWORK_SUPPORTS_IPV6
-   struct sockaddr_in6 sockaddr_in6;
+    struct sockaddr_in6 sockaddr_in6;
 #endif
 } OS_SockAddr_Accessor_t;
-
 
 /****************************************************************************************
                                     Sockets API
  ***************************************************************************************/
-
 
 /*----------------------------------------------------------------
  *
@@ -86,90 +85,84 @@ typedef union
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_SocketOpen_Impl(uint32 sock_id)
+int32 OS_SocketOpen_Impl(const OS_object_token_t *token)
 {
-   int os_domain;
-   int os_type;
-   int os_proto;
-   int os_flags;
+    int                             os_domain;
+    int                             os_type;
+    int                             os_proto;
+    int                             os_flags;
+    OS_impl_file_internal_record_t *impl;
+    OS_stream_internal_record_t *   stream;
 
-   os_proto = 0;
+    impl   = OS_OBJECT_TABLE_GET(OS_impl_filehandle_table, *token);
+    stream = OS_OBJECT_TABLE_GET(OS_stream_table, *token);
 
-   switch(OS_stream_table[sock_id].socket_type)
-   {
-   case OS_SocketType_DATAGRAM:
-      os_type = SOCK_DGRAM;
-      break;
-   case OS_SocketType_STREAM:
-      os_type = SOCK_STREAM;
-      break;
+    os_proto = 0;
 
-   default:
-      return OS_ERR_NOT_IMPLEMENTED;
-   }
+    switch (stream->socket_type)
+    {
+        case OS_SocketType_DATAGRAM:
+            os_type = SOCK_DGRAM;
+            break;
+        case OS_SocketType_STREAM:
+            os_type = SOCK_STREAM;
+            break;
 
-   switch(OS_stream_table[sock_id].socket_domain)
-   {
-   case OS_SocketDomain_INET:
-      os_domain = AF_INET;
-      break;
+        default:
+            return OS_ERR_NOT_IMPLEMENTED;
+    }
+
+    switch (stream->socket_domain)
+    {
+        case OS_SocketDomain_INET:
+            os_domain = AF_INET;
+            break;
 #ifdef OS_NETWORK_SUPPORTS_IPV6
-   case OS_SocketDomain_INET6:
-      os_domain = AF_INET6;
-      break;
+        case OS_SocketDomain_INET6:
+            os_domain = AF_INET6;
+            break;
 #endif
-   default:
-      return OS_ERR_NOT_IMPLEMENTED;
-   }
+        default:
+            return OS_ERR_NOT_IMPLEMENTED;
+    }
 
-   switch(OS_stream_table[sock_id].socket_domain)
-   {
-   case OS_SocketDomain_INET:
-   case OS_SocketDomain_INET6:
-      switch(OS_stream_table[sock_id].socket_type)
-      {
-      case OS_SocketType_DATAGRAM:
-         os_proto = IPPROTO_UDP;
-         break;
-      case OS_SocketType_STREAM:
-         os_proto = IPPROTO_TCP;
-         break;
-      default:
-         break;
-      }
-      break;
-   default:
-      break;
-   }
+    /* Only AF_INET* at this point, can add cases if support is expanded */
+    switch (stream->socket_type)
+    {
+        case OS_SocketType_DATAGRAM:
+            os_proto = IPPROTO_UDP;
+            break;
+        case OS_SocketType_STREAM:
+            os_proto = IPPROTO_TCP;
+            break;
+    }
 
-   OS_impl_filehandle_table[sock_id].fd = socket(os_domain, os_type, os_proto);
-   if (OS_impl_filehandle_table[sock_id].fd < 0)
-   {
-      return OS_ERROR;
-   }
+    impl->fd = socket(os_domain, os_type, os_proto);
+    if (impl->fd < 0)
+    {
+        return OS_ERROR;
+    }
 
-   /*
-    * Setting the REUSEADDR flag helps during debugging when there might be frequent
-    * code restarts.  However if setting the option fails then it is not worth bailing out over.
-    */
-   os_flags = 1;
-   setsockopt(OS_impl_filehandle_table[sock_id].fd,SOL_SOCKET,SO_REUSEADDR,&os_flags,sizeof(os_flags));
+    /*
+     * Setting the REUSEADDR flag helps during debugging when there might be frequent
+     * code restarts.  However if setting the option fails then it is not worth bailing out over.
+     */
+    os_flags = 1;
+    setsockopt(impl->fd, SOL_SOCKET, SO_REUSEADDR, &os_flags, sizeof(os_flags));
 
-   /*
-    * Set the standard options on the filehandle by default --
-    * this may set it to non-blocking mode if the implementation supports it.
-    * any blocking would be done explicitly via the select() wrappers
-    */
-   os_flags = fcntl(OS_impl_filehandle_table[sock_id].fd, F_GETFL);
-   os_flags |= OS_IMPL_SOCKET_FLAGS;
-   fcntl(OS_impl_filehandle_table[sock_id].fd, F_SETFL, os_flags);
+    /*
+     * Set the standard options on the filehandle by default --
+     * this may set it to non-blocking mode if the implementation supports it.
+     * any blocking would be done explicitly via the select() wrappers
+     */
+    os_flags = fcntl(impl->fd, F_GETFL);
+    os_flags |= OS_IMPL_SOCKET_FLAGS;
+    fcntl(impl->fd, F_SETFL, os_flags);
 
-   OS_impl_filehandle_table[sock_id].selectable =
-           ((os_flags & O_NONBLOCK) != 0);
+    impl->selectable = ((os_flags & O_NONBLOCK) != 0);
 
-   return OS_SUCCESS;
+    return OS_SUCCESS;
 } /* end OS_SocketOpen_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -179,54 +172,58 @@ int32 OS_SocketOpen_Impl(uint32 sock_id)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_SocketBind_Impl(uint32 sock_id, const OS_SockAddr_t *Addr)
+int32 OS_SocketBind_Impl(const OS_object_token_t *token, const OS_SockAddr_t *Addr)
 {
-   int os_result;
-   socklen_t addrlen;
-   const struct sockaddr *sa;
+    int                             os_result;
+    socklen_t                       addrlen;
+    const struct sockaddr *         sa;
+    OS_impl_file_internal_record_t *impl;
+    OS_stream_internal_record_t *   stream;
 
-   sa = (const struct sockaddr *)&Addr->AddrData;
+    impl   = OS_OBJECT_TABLE_GET(OS_impl_filehandle_table, *token);
+    stream = OS_OBJECT_TABLE_GET(OS_stream_table, *token);
 
-   switch(sa->sa_family)
-   {
-   case AF_INET:
-      addrlen = sizeof(struct sockaddr_in);
-      break;
+    sa = (const struct sockaddr *)&Addr->AddrData;
+
+    switch (sa->sa_family)
+    {
+        case AF_INET:
+            addrlen = sizeof(struct sockaddr_in);
+            break;
 #ifdef OS_NETWORK_SUPPORTS_IPV6
-   case AF_INET6:
-      addrlen = sizeof(struct sockaddr_in6);
-      break;
+        case AF_INET6:
+            addrlen = sizeof(struct sockaddr_in6);
+            break;
 #endif
-   default:
-      addrlen = 0;
-      break;
-   }
+        default:
+            addrlen = 0;
+            break;
+    }
 
-   if (addrlen == 0 || addrlen > OS_SOCKADDR_MAX_LEN)
-   {
-      return OS_ERR_BAD_ADDRESS;
-   }
+    if (addrlen == 0 || addrlen > OS_SOCKADDR_MAX_LEN)
+    {
+        return OS_ERR_BAD_ADDRESS;
+    }
 
-   os_result = bind(OS_impl_filehandle_table[sock_id].fd, sa, addrlen);
-   if (os_result < 0)
-   {
-      OS_DEBUG("bind: %s\n",strerror(errno));
-      return OS_ERROR;
-   }
+    os_result = bind(impl->fd, sa, addrlen);
+    if (os_result < 0)
+    {
+        OS_DEBUG("bind: %s\n", strerror(errno));
+        return OS_ERROR;
+    }
 
-   /* Start listening on the socket (implied for stream sockets) */
-   if (OS_stream_table[sock_id].socket_type == OS_SocketType_STREAM)
-   {
-      os_result = listen(OS_impl_filehandle_table[sock_id].fd, 10);
-      if (os_result < 0)
-      {
-         OS_DEBUG("listen: %s\n",strerror(errno));
-         return OS_ERROR;
-      }
-   }
-   return OS_SUCCESS;
+    /* Start listening on the socket (implied for stream sockets) */
+    if (stream->socket_type == OS_SocketType_STREAM)
+    {
+        os_result = listen(impl->fd, 10);
+        if (os_result < 0)
+        {
+            OS_DEBUG("listen: %s\n", strerror(errno));
+            return OS_ERROR;
+        }
+    }
+    return OS_SUCCESS;
 } /* end OS_SocketBind_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -236,75 +233,77 @@ int32 OS_SocketBind_Impl(uint32 sock_id, const OS_SockAddr_t *Addr)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_SocketConnect_Impl(uint32 sock_id, const OS_SockAddr_t *Addr, int32 timeout)
+int32 OS_SocketConnect_Impl(const OS_object_token_t *token, const OS_SockAddr_t *Addr, int32 timeout)
 {
-   int32 return_code;
-   int os_status;
-   int sockopt;
-   socklen_t slen;
-   uint32 operation;
-   const struct sockaddr *sa;
+    int32                           return_code;
+    int                             os_status;
+    int                             sockopt;
+    socklen_t                       slen;
+    uint32                          operation;
+    const struct sockaddr *         sa;
+    OS_impl_file_internal_record_t *impl;
 
-   sa = (const struct sockaddr *)&Addr->AddrData;
-   switch(sa->sa_family)
-   {
-   case AF_INET:
-      slen = sizeof(struct sockaddr_in);
-      break;
+    impl = OS_OBJECT_TABLE_GET(OS_impl_filehandle_table, *token);
+
+    sa = (const struct sockaddr *)&Addr->AddrData;
+    switch (sa->sa_family)
+    {
+        case AF_INET:
+            slen = sizeof(struct sockaddr_in);
+            break;
 #ifdef OS_NETWORK_SUPPORTS_IPV6
-   case AF_INET6:
-      slen = sizeof(struct sockaddr_in6);
-      break;
+        case AF_INET6:
+            slen = sizeof(struct sockaddr_in6);
+            break;
 #endif
-   default:
-      slen = 0;
-      break;
-   }
+        default:
+            slen = 0;
+            break;
+    }
 
-   if (slen != Addr->ActualLength)
-   {
-      return_code = OS_ERR_BAD_ADDRESS;
-   }
-   else
-   {
-       return_code = OS_SUCCESS;
-       os_status = connect(OS_impl_filehandle_table[sock_id].fd, sa, slen);
-       if (os_status < 0)
-       {
-           if (errno != EINPROGRESS)
-           {
-               return_code = OS_ERROR;
-           }
-           else
-           {
-               operation = OS_STREAM_STATE_WRITABLE;
-               if (OS_impl_filehandle_table[sock_id].selectable)
-               {
-                   return_code = OS_SelectSingle_Impl(sock_id, &operation, timeout);
-               }
-               if (return_code == OS_SUCCESS)
-               {
-                   if ((operation & OS_STREAM_STATE_WRITABLE) == 0)
-                   {
-                       return_code = OS_ERROR_TIMEOUT;
-                   }
-                   else
-                   {
-                       sockopt = 0;
-                       slen = sizeof(sockopt);
-                       os_status = getsockopt(OS_impl_filehandle_table[sock_id].fd, SOL_SOCKET, SO_ERROR, &sockopt, &slen);
-                       if (os_status < 0 || sockopt != 0)
-                       {
-                           return_code = OS_ERROR;
-                       }
-                   }
-               }
-           }
-       }
-   }
-   return return_code;
+    if (slen != Addr->ActualLength)
+    {
+        return_code = OS_ERR_BAD_ADDRESS;
+    }
+    else
+    {
+        return_code = OS_SUCCESS;
+        os_status   = connect(impl->fd, sa, slen);
+        if (os_status < 0)
+        {
+            if (errno != EINPROGRESS)
+            {
+                return_code = OS_ERROR;
+            }
+            else
+            {
+                operation = OS_STREAM_STATE_WRITABLE;
+                if (impl->selectable)
+                {
+                    return_code = OS_SelectSingle_Impl(token, &operation, timeout);
+                }
+                if (return_code == OS_SUCCESS)
+                {
+                    if ((operation & OS_STREAM_STATE_WRITABLE) == 0)
+                    {
+                        return_code = OS_ERROR_TIMEOUT;
+                    }
+                    else
+                    {
+                        sockopt   = 0;
+                        slen      = sizeof(sockopt);
+                        os_status = getsockopt(impl->fd, SOL_SOCKET, SO_ERROR, &sockopt, &slen);
+                        if (os_status < 0 || sockopt != 0)
+                        {
+                            return_code = OS_ERROR;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return return_code;
 } /* end OS_SocketConnect_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -314,59 +313,63 @@ int32 OS_SocketConnect_Impl(uint32 sock_id, const OS_SockAddr_t *Addr, int32 tim
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_SocketAccept_Impl(uint32 sock_id, uint32 connsock_id, OS_SockAddr_t *Addr, int32 timeout)
+int32 OS_SocketAccept_Impl(const OS_object_token_t *sock_token, const OS_object_token_t *conn_token,
+                           OS_SockAddr_t *Addr, int32 timeout)
 {
-   int32 return_code;
-   uint32 operation;
-   socklen_t addrlen;
-   int os_flags;
+    int32                           return_code;
+    uint32                          operation;
+    socklen_t                       addrlen;
+    int                             os_flags;
+    OS_impl_file_internal_record_t *sock_impl;
+    OS_impl_file_internal_record_t *conn_impl;
 
-   operation = OS_STREAM_STATE_READABLE;
-   if (OS_impl_filehandle_table[sock_id].selectable)
-   {
-       return_code = OS_SelectSingle_Impl(sock_id, &operation, timeout);
-   }
-   else
-   {
-       return_code = OS_SUCCESS;
-   }
+    sock_impl = OS_OBJECT_TABLE_GET(OS_impl_filehandle_table, *sock_token);
+    conn_impl = OS_OBJECT_TABLE_GET(OS_impl_filehandle_table, *conn_token);
 
-   if (return_code == OS_SUCCESS)
-   {
-      if ((operation & OS_STREAM_STATE_READABLE) == 0)
-      {
-         return_code = OS_ERROR_TIMEOUT;
-      }
-      else
-      {
-         addrlen = Addr->ActualLength;
-         OS_impl_filehandle_table[connsock_id].fd = accept(OS_impl_filehandle_table[sock_id].fd, (struct sockaddr *)&Addr->AddrData, &addrlen);
-         if (OS_impl_filehandle_table[connsock_id].fd < 0)
-         {
-            return_code = OS_ERROR;
-         }
-         else
-         {
-             Addr->ActualLength = addrlen;
+    operation = OS_STREAM_STATE_READABLE;
+    if (sock_impl->selectable)
+    {
+        return_code = OS_SelectSingle_Impl(sock_token, &operation, timeout);
+    }
+    else
+    {
+        return_code = OS_SUCCESS;
+    }
 
-             /*
-              * Set the standard options on the filehandle by default --
-              * this may set it to non-blocking mode if the implementation supports it.
-              * any blocking would be done explicitly via the select() wrappers
-              */
-             os_flags = fcntl(OS_impl_filehandle_table[connsock_id].fd, F_GETFL);
-             os_flags |= OS_IMPL_SOCKET_FLAGS;
-             fcntl(OS_impl_filehandle_table[connsock_id].fd, F_SETFL, os_flags);
+    if (return_code == OS_SUCCESS)
+    {
+        if ((operation & OS_STREAM_STATE_READABLE) == 0)
+        {
+            return_code = OS_ERROR_TIMEOUT;
+        }
+        else
+        {
+            addrlen       = Addr->ActualLength;
+            conn_impl->fd = accept(sock_impl->fd, (struct sockaddr *)&Addr->AddrData, &addrlen);
+            if (conn_impl->fd < 0)
+            {
+                return_code = OS_ERROR;
+            }
+            else
+            {
+                Addr->ActualLength = addrlen;
 
-             OS_impl_filehandle_table[connsock_id].selectable =
-                     ((os_flags & O_NONBLOCK) != 0);
-         }
-      }
-   }
+                /*
+                 * Set the standard options on the filehandle by default --
+                 * this may set it to non-blocking mode if the implementation supports it.
+                 * any blocking would be done explicitly via the select() wrappers
+                 */
+                os_flags = fcntl(conn_impl->fd, F_GETFL);
+                os_flags |= OS_IMPL_SOCKET_FLAGS;
+                fcntl(conn_impl->fd, F_SETFL, os_flags);
 
-   return return_code;
+                conn_impl->selectable = ((os_flags & O_NONBLOCK) != 0);
+            }
+        }
+    }
+
+    return return_code;
 } /* end OS_SocketAccept_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -376,87 +379,89 @@ int32 OS_SocketAccept_Impl(uint32 sock_id, uint32 connsock_id, OS_SockAddr_t *Ad
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_SocketRecvFrom_Impl(uint32 sock_id, void *buffer, uint32 buflen, OS_SockAddr_t *RemoteAddr, int32 timeout)
+int32 OS_SocketRecvFrom_Impl(const OS_object_token_t *token, void *buffer, size_t buflen, OS_SockAddr_t *RemoteAddr,
+                             int32 timeout)
 {
-   int32 return_code;
-   int os_result;
-   int waitflags;
-   uint32 operation;
-   struct sockaddr *sa;
-   socklen_t addrlen;
+    int32                           return_code;
+    int                             os_result;
+    int                             waitflags;
+    uint32                          operation;
+    struct sockaddr *               sa;
+    socklen_t                       addrlen;
+    OS_impl_file_internal_record_t *impl;
 
-   if (RemoteAddr == NULL)
-   {
-      sa = NULL;
-      addrlen = 0;
-   }
-   else
-   {
-      addrlen = OS_SOCKADDR_MAX_LEN;
-      sa = (struct sockaddr *)&RemoteAddr->AddrData;
-   }
+    impl = OS_OBJECT_TABLE_GET(OS_impl_filehandle_table, *token);
 
-   operation = OS_STREAM_STATE_READABLE;
-   /*
-    * If "O_NONBLOCK" flag is set then use select()
-    * Note this is the only way to get a correct timeout
-    */
-   if (OS_impl_filehandle_table[sock_id].selectable)
-   {
-       waitflags = MSG_DONTWAIT;
-       return_code = OS_SelectSingle_Impl(sock_id, &operation, timeout);
-   }
-   else
-   {
-       if (timeout == 0)
-       {
-           waitflags = MSG_DONTWAIT;
-       }
-       else
-       {
-           /* note timeout will not be honored if >0 */
-           waitflags = 0;
-       }
-       return_code = OS_SUCCESS;
-   }
+    if (RemoteAddr == NULL)
+    {
+        sa      = NULL;
+        addrlen = 0;
+    }
+    else
+    {
+        addrlen = OS_SOCKADDR_MAX_LEN;
+        sa      = (struct sockaddr *)&RemoteAddr->AddrData;
+    }
 
-   if (return_code == OS_SUCCESS)
-   {
-      if ((operation & OS_STREAM_STATE_READABLE) == 0)
-      {
-         return_code = OS_ERROR_TIMEOUT;
-      }
-      else
-      {
-         os_result = recvfrom(OS_impl_filehandle_table[sock_id].fd, buffer, buflen, waitflags, sa, &addrlen);
-         if (os_result < 0)
-         {
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
+    operation = OS_STREAM_STATE_READABLE;
+    /*
+     * If "O_NONBLOCK" flag is set then use select()
+     * Note this is the only way to get a correct timeout
+     */
+    if (impl->selectable)
+    {
+        waitflags   = MSG_DONTWAIT;
+        return_code = OS_SelectSingle_Impl(token, &operation, timeout);
+    }
+    else
+    {
+        if (timeout == 0)
+        {
+            waitflags = MSG_DONTWAIT;
+        }
+        else
+        {
+            /* note timeout will not be honored if >0 */
+            waitflags = 0;
+        }
+        return_code = OS_SUCCESS;
+    }
+
+    if (return_code == OS_SUCCESS)
+    {
+        if ((operation & OS_STREAM_STATE_READABLE) == 0)
+        {
+            return_code = OS_ERROR_TIMEOUT;
+        }
+        else
+        {
+            os_result = recvfrom(impl->fd, buffer, buflen, waitflags, sa, &addrlen);
+            if (os_result < 0)
             {
-               return_code = OS_QUEUE_EMPTY;
+                if (errno == EAGAIN || errno == EWOULDBLOCK)
+                {
+                    return_code = OS_QUEUE_EMPTY;
+                }
+                else
+                {
+                    OS_DEBUG("recvfrom: %s\n", strerror(errno));
+                    return_code = OS_ERROR;
+                }
             }
             else
             {
-               OS_DEBUG("recvfrom: %s\n",strerror(errno));
-               return_code = OS_ERROR;
+                return_code = os_result;
+
+                if (RemoteAddr != NULL)
+                {
+                    RemoteAddr->ActualLength = addrlen;
+                }
             }
-         }
-         else
-         {
-            return_code = os_result;
+        }
+    }
 
-            if (RemoteAddr != NULL)
-            {
-               RemoteAddr->ActualLength = addrlen;
-            }
-         }
-      }
-   }
-
-
-   return return_code;
+    return return_code;
 } /* end OS_SocketRecvFrom_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -466,44 +471,46 @@ int32 OS_SocketRecvFrom_Impl(uint32 sock_id, void *buffer, uint32 buflen, OS_Soc
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_SocketSendTo_Impl(uint32 sock_id, const void *buffer, uint32 buflen, const OS_SockAddr_t *RemoteAddr)
+int32 OS_SocketSendTo_Impl(const OS_object_token_t *token, const void *buffer, size_t buflen,
+                           const OS_SockAddr_t *RemoteAddr)
 {
-   int os_result;
-   socklen_t addrlen;
-   const struct sockaddr *sa;
+    int                             os_result;
+    socklen_t                       addrlen;
+    const struct sockaddr *         sa;
+    OS_impl_file_internal_record_t *impl;
 
-   sa = (const struct sockaddr *)&RemoteAddr->AddrData;
-   switch(sa->sa_family)
-   {
-   case AF_INET:
-      addrlen = sizeof(struct sockaddr_in);
-      break;
+    impl = OS_OBJECT_TABLE_GET(OS_impl_filehandle_table, *token);
+
+    sa = (const struct sockaddr *)&RemoteAddr->AddrData;
+    switch (sa->sa_family)
+    {
+        case AF_INET:
+            addrlen = sizeof(struct sockaddr_in);
+            break;
 #ifdef OS_NETWORK_SUPPORTS_IPV6
-   case AF_INET6:
-      addrlen = sizeof(struct sockaddr_in6);
-      break;
+        case AF_INET6:
+            addrlen = sizeof(struct sockaddr_in6);
+            break;
 #endif
-   default:
-      addrlen = 0;
-      break;
-   }
+        default:
+            addrlen = 0;
+            break;
+    }
 
-   if (addrlen != RemoteAddr->ActualLength)
-   {
-      return OS_ERR_BAD_ADDRESS;
-   }
+    if (addrlen != RemoteAddr->ActualLength)
+    {
+        return OS_ERR_BAD_ADDRESS;
+    }
 
-   os_result = sendto(OS_impl_filehandle_table[sock_id].fd, buffer, buflen, MSG_DONTWAIT, sa, addrlen);
-   if (os_result < 0)
-   {
-      OS_DEBUG("sendto: %s\n",strerror(errno));
-      return OS_ERROR;
-   }
+    os_result = sendto(impl->fd, buffer, buflen, MSG_DONTWAIT, sa, addrlen);
+    if (os_result < 0)
+    {
+        OS_DEBUG("sendto: %s\n", strerror(errno));
+        return OS_ERROR;
+    }
 
-   return os_result;
+    return os_result;
 } /* end OS_SocketSendTo_Impl */
-
-
 
 /*----------------------------------------------------------------
  *
@@ -513,11 +520,10 @@ int32 OS_SocketSendTo_Impl(uint32 sock_id, const void *buffer, uint32 buflen, co
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_SocketGetInfo_Impl (uint32 sock_id, OS_socket_prop_t *sock_prop)
+int32 OS_SocketGetInfo_Impl(const OS_object_token_t *token, OS_socket_prop_t *sock_prop)
 {
-   return OS_SUCCESS;
+    return OS_SUCCESS;
 } /* end OS_SocketGetInfo_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -529,41 +535,41 @@ int32 OS_SocketGetInfo_Impl (uint32 sock_id, OS_socket_prop_t *sock_prop)
  *-----------------------------------------------------------------*/
 int32 OS_SocketAddrInit_Impl(OS_SockAddr_t *Addr, OS_SocketDomain_t Domain)
 {
-   sa_family_t sa_family;
-   socklen_t addrlen;
-   OS_SockAddr_Accessor_t *Accessor;
+    sa_family_t             sa_family;
+    socklen_t               addrlen;
+    OS_SockAddr_Accessor_t *Accessor;
 
-   memset(Addr, 0, sizeof(OS_SockAddr_t));
-   Accessor = (OS_SockAddr_Accessor_t *)&Addr->AddrData;
+    memset(Addr, 0, sizeof(OS_SockAddr_t));
+    Accessor = (OS_SockAddr_Accessor_t *)&Addr->AddrData;
 
-   switch(Domain)
-   {
-   case OS_SocketDomain_INET:
-      sa_family = AF_INET;
-      addrlen = sizeof(struct sockaddr_in);
-      break;
+    switch (Domain)
+    {
+        case OS_SocketDomain_INET:
+            sa_family = AF_INET;
+            addrlen   = sizeof(struct sockaddr_in);
+            break;
 #ifdef OS_NETWORK_SUPPORTS_IPV6
-   case OS_SocketDomain_INET6:
-      sa_family = AF_INET6;
-      addrlen = sizeof(struct sockaddr_in6);
-      break;
+        case OS_SocketDomain_INET6:
+            sa_family = AF_INET6;
+            addrlen   = sizeof(struct sockaddr_in6);
+            break;
 #endif
-   default:
-      addrlen = 0;
-      break;
-   }
+        default:
+            sa_family = 0;
+            addrlen   = 0;
+            break;
+    }
 
-   if (addrlen == 0 || addrlen > OS_SOCKADDR_MAX_LEN)
-   {
-      return OS_ERR_NOT_IMPLEMENTED;
-   }
+    if (addrlen == 0 || addrlen > OS_SOCKADDR_MAX_LEN)
+    {
+        return OS_ERR_NOT_IMPLEMENTED;
+    }
 
-   Addr->ActualLength = addrlen;
-   Accessor->sockaddr.sa_family = sa_family;
+    Addr->ActualLength           = OSAL_SIZE_C(addrlen);
+    Accessor->sockaddr.sa_family = sa_family;
 
-   return OS_SUCCESS;
+    return OS_SUCCESS;
 } /* end OS_SocketAddrInit_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -573,36 +579,35 @@ int32 OS_SocketAddrInit_Impl(OS_SockAddr_t *Addr, OS_SocketDomain_t Domain)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_SocketAddrToString_Impl(char *buffer, uint32 buflen, const OS_SockAddr_t *Addr)
+int32 OS_SocketAddrToString_Impl(char *buffer, size_t buflen, const OS_SockAddr_t *Addr)
 {
-   const void *addrbuffer;
-   const OS_SockAddr_Accessor_t *Accessor;
+    const void *                  addrbuffer;
+    const OS_SockAddr_Accessor_t *Accessor;
 
-   Accessor = (const OS_SockAddr_Accessor_t *)&Addr->AddrData;
+    Accessor = (const OS_SockAddr_Accessor_t *)&Addr->AddrData;
 
-   switch(Accessor->sockaddr.sa_family)
-   {
-   case AF_INET:
-      addrbuffer = &Accessor->sockaddr_in.sin_addr;
-      break;
+    switch (Accessor->sockaddr.sa_family)
+    {
+        case AF_INET:
+            addrbuffer = &Accessor->sockaddr_in.sin_addr;
+            break;
 #ifdef OS_NETWORK_SUPPORTS_IPV6
-   case AF_INET6:
-      addrbuffer = &Accessor->sockaddr_in6.sin6_addr;
-      break;
+        case AF_INET6:
+            addrbuffer = &Accessor->sockaddr_in6.sin6_addr;
+            break;
 #endif
-   default:
-      return OS_ERR_BAD_ADDRESS;
-      break;
-   }
+        default:
+            return OS_ERR_BAD_ADDRESS;
+            break;
+    }
 
-   if (inet_ntop(Accessor->sockaddr.sa_family, addrbuffer, buffer, buflen) == NULL)
-   {
-      return OS_ERROR;
-   }
+    if (inet_ntop(Accessor->sockaddr.sa_family, addrbuffer, buffer, buflen) == NULL)
+    {
+        return OS_ERROR;
+    }
 
-   return OS_SUCCESS;
+    return OS_SUCCESS;
 } /* end OS_SocketAddrToString_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -614,34 +619,33 @@ int32 OS_SocketAddrToString_Impl(char *buffer, uint32 buflen, const OS_SockAddr_
  *-----------------------------------------------------------------*/
 int32 OS_SocketAddrFromString_Impl(OS_SockAddr_t *Addr, const char *string)
 {
-   void *addrbuffer;
-   OS_SockAddr_Accessor_t *Accessor;
+    void *                  addrbuffer;
+    OS_SockAddr_Accessor_t *Accessor;
 
-   Accessor = (OS_SockAddr_Accessor_t *)&Addr->AddrData;
+    Accessor = (OS_SockAddr_Accessor_t *)&Addr->AddrData;
 
-   switch(Accessor->sockaddr.sa_family)
-   {
-   case AF_INET:
-      addrbuffer = &Accessor->sockaddr_in.sin_addr;
-      break;
+    switch (Accessor->sockaddr.sa_family)
+    {
+        case AF_INET:
+            addrbuffer = &Accessor->sockaddr_in.sin_addr;
+            break;
 #ifdef OS_NETWORK_SUPPORTS_IPV6
-   case AF_INET6:
-      addrbuffer = &Accessor->sockaddr_in6.sin6_addr;
-      break;
+        case AF_INET6:
+            addrbuffer = &Accessor->sockaddr_in6.sin6_addr;
+            break;
 #endif
-   default:
-      return OS_ERR_BAD_ADDRESS;
-      break;
-   }
+        default:
+            return OS_ERR_BAD_ADDRESS;
+            break;
+    }
 
-   if (inet_pton(Accessor->sockaddr.sa_family, string, addrbuffer) < 0)
-   {
-      return OS_ERROR;
-   }
+    if (inet_pton(Accessor->sockaddr.sa_family, string, addrbuffer) < 0)
+    {
+        return OS_ERROR;
+    }
 
-   return OS_SUCCESS;
+    return OS_SUCCESS;
 } /* end OS_SocketAddrFromString_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -653,31 +657,30 @@ int32 OS_SocketAddrFromString_Impl(OS_SockAddr_t *Addr, const char *string)
  *-----------------------------------------------------------------*/
 int32 OS_SocketAddrGetPort_Impl(uint16 *PortNum, const OS_SockAddr_t *Addr)
 {
-   in_port_t sa_port;
-   const OS_SockAddr_Accessor_t *Accessor;
+    in_port_t                     sa_port;
+    const OS_SockAddr_Accessor_t *Accessor;
 
-   Accessor = (const OS_SockAddr_Accessor_t *)&Addr->AddrData;
+    Accessor = (const OS_SockAddr_Accessor_t *)&Addr->AddrData;
 
-   switch(Accessor->sockaddr.sa_family)
-   {
-   case AF_INET:
-      sa_port = Accessor->sockaddr_in.sin_port;
-      break;
+    switch (Accessor->sockaddr.sa_family)
+    {
+        case AF_INET:
+            sa_port = Accessor->sockaddr_in.sin_port;
+            break;
 #ifdef OS_NETWORK_SUPPORTS_IPV6
-   case AF_INET6:
-      sa_port = Accessor->sockaddr_in6.sin6_port;
-      break;
+        case AF_INET6:
+            sa_port = Accessor->sockaddr_in6.sin6_port;
+            break;
 #endif
-   default:
-      return OS_ERR_BAD_ADDRESS;
-      break;
-   }
+        default:
+            return OS_ERR_BAD_ADDRESS;
+            break;
+    }
 
-   *PortNum = ntohs(sa_port);
+    *PortNum = ntohs(sa_port);
 
-   return OS_SUCCESS;
+    return OS_SUCCESS;
 } /* end OS_SocketAddrGetPort_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -689,28 +692,25 @@ int32 OS_SocketAddrGetPort_Impl(uint16 *PortNum, const OS_SockAddr_t *Addr)
  *-----------------------------------------------------------------*/
 int32 OS_SocketAddrSetPort_Impl(OS_SockAddr_t *Addr, uint16 PortNum)
 {
-   in_port_t sa_port;
-   OS_SockAddr_Accessor_t *Accessor;
+    in_port_t               sa_port;
+    OS_SockAddr_Accessor_t *Accessor;
 
-   sa_port = htons(PortNum);
-   Accessor = (OS_SockAddr_Accessor_t *)&Addr->AddrData;
+    sa_port  = htons(PortNum);
+    Accessor = (OS_SockAddr_Accessor_t *)&Addr->AddrData;
 
-   switch(Accessor->sockaddr.sa_family)
-   {
-   case AF_INET:
-      Accessor->sockaddr_in.sin_port = sa_port;
-      break;
+    switch (Accessor->sockaddr.sa_family)
+    {
+        case AF_INET:
+            Accessor->sockaddr_in.sin_port = sa_port;
+            break;
 #ifdef OS_NETWORK_SUPPORTS_IPV6
-   case AF_INET6:
-      Accessor->sockaddr_in6.sin6_port = sa_port;
-      break;
+        case AF_INET6:
+            Accessor->sockaddr_in6.sin6_port = sa_port;
+            break;
 #endif
-   default:
-      return OS_ERR_BAD_ADDRESS;
-   }
+        default:
+            return OS_ERR_BAD_ADDRESS;
+    }
 
-   return OS_SUCCESS;
+    return OS_SUCCESS;
 } /* end OS_SocketAddrSetPort_Impl */
-
-
-

@@ -43,7 +43,7 @@
 
        Note: This should write the string as-is without buffering.
  ------------------------------------------------------------------*/
-void OCS_OS_BSP_ConsoleOutput_Impl(const char *Str, uint32_t DataLen)
+void OCS_OS_BSP_ConsoleOutput_Impl(const char *Str, size_t DataLen)
 {
     int32_t retcode = UT_DEFAULT_IMPL(OCS_OS_BSP_ConsoleOutput_Impl);
 
@@ -78,4 +78,3 @@ void OCS_OS_BSP_ConsoleSetMode_Impl(uint32_t ModeBits)
         UT_Stub_CopyFromLocal(UT_KEY(OCS_OS_BSP_ConsoleSetMode_Impl), &ModeBits, sizeof(ModeBits));
     }
 }
-

@@ -25,18 +25,15 @@
  *
  */
 
-#ifndef INCLUDE_UT_ADAPTOR_MUTEX_H_
-#define INCLUDE_UT_ADAPTOR_MUTEX_H_
+#ifndef UT_ADAPTOR_MUTEX_H
+#define UT_ADAPTOR_MUTEX_H
 
-
-#include <common_types.h>
+#include "common_types.h"
 #include <OCS_taskLib.h>
 #include <OCS_semLib.h>
 
-extern void*  const UT_Ref_OS_impl_mutex_table;
+extern void *const  UT_Ref_OS_impl_mutex_table;
 extern size_t const UT_Ref_OS_impl_mutex_table_SIZE;
-
-
 
 /*****************************************************
  *
@@ -49,5 +46,4 @@ extern size_t const UT_Ref_OS_impl_mutex_table_SIZE;
 
 int32 UT_Call_OS_VxWorks_MutexAPI_Impl_Init(void);
 
-#endif  /* INCLUDE_UT_ADAPTOR_MUTEX_H_ */
-
+#endif /* UT_ADAPTOR_MUTEX_H  */

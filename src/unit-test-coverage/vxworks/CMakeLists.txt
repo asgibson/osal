@@ -5,7 +5,7 @@ set(VXWORKS_MODULE_LIST
     common
     console
     countsem
-    dirs
+    dirs-globals
     files
     filesys
     idmap
@@ -24,6 +24,7 @@ set(VXWORKS_PORTABLE_BLOCK_LIST
     posix-gettime
     posix-io
     posix-files
+    posix-dirs
 
     console-bsp
     bsd-select

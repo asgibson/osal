@@ -25,24 +25,23 @@
  *
  */
 
-#ifndef INCLUDE_OS_SHARED_DIR_H_
-#define INCLUDE_OS_SHARED_DIR_H_
+#ifndef OS_SHARED_DIR_H
+#define OS_SHARED_DIR_H
 
+#include "osapi-dir.h"
 #include <os-shared-globaldefs.h>
 
 /* directory objects */
 typedef struct
 {
-   char          dir_name[OS_MAX_PATH_LEN];
+    char dir_name[OS_MAX_PATH_LEN];
 } OS_dir_internal_record_t;
-
 
 /*
  * These record types have extra information with each entry.  These tables are used
  * to share extra data between the common layer and the OS-specific implementation.
  */
-extern OS_dir_internal_record_t            OS_dir_table[OS_MAX_NUM_OPEN_DIRS];
-
+extern OS_dir_internal_record_t OS_dir_table[OS_MAX_NUM_OPEN_DIRS];
 
 /*
  * Directory API abstraction layer
@@ -56,9 +55,7 @@ extern OS_dir_internal_record_t            OS_dir_table[OS_MAX_NUM_OPEN_DIRS];
 
    returns: OS_SUCCESS on success, or relevant error code
 ---------------------------------------------------------------------------------------*/
-int32 OS_DirAPI_Init                 (void);
-
-
+int32 OS_DirAPI_Init(void);
 
 /*----------------------------------------------------------------
    Function: OS_DirCreate_Impl
@@ -76,7 +73,7 @@ int32 OS_DirCreate_Impl(const char *local_path, uint32 access);
 
     Returns: OS_SUCCESS on success, or relevant error code
  ------------------------------------------------------------------*/
-int32 OS_DirOpen_Impl(uint32 local_id, const char *local_path);
+int32 OS_DirOpen_Impl(const OS_object_token_t *token, const char *local_path);
 
 /*----------------------------------------------------------------
    Function: OS_DirClose_Impl
@@ -85,7 +82,7 @@ int32 OS_DirOpen_Impl(uint32 local_id, const char *local_path);
 
     Returns: OS_SUCCESS on success, or relevant error code
  ------------------------------------------------------------------*/
-int32 OS_DirClose_Impl(uint32 local_id);
+int32 OS_DirClose_Impl(const OS_object_token_t *token);
 
 /*----------------------------------------------------------------
    Function: OS_DirRead_Impl
@@ -94,7 +91,7 @@ int32 OS_DirClose_Impl(uint32 local_id);
 
     Returns: OS_SUCCESS on success, or relevant error code
  ------------------------------------------------------------------*/
-int32 OS_DirRead_Impl(uint32 local_id, os_dirent_t *dirent);
+int32 OS_DirRead_Impl(const OS_object_token_t *token, os_dirent_t *dirent);
 
 /*----------------------------------------------------------------
    Function: OS_DirRewind_Impl
@@ -103,7 +100,7 @@ int32 OS_DirRead_Impl(uint32 local_id, os_dirent_t *dirent);
 
     Returns: OS_SUCCESS on success, or relevant error code
  ------------------------------------------------------------------*/
-int32 OS_DirRewind_Impl(uint32 local_id);
+int32 OS_DirRewind_Impl(const OS_object_token_t *token);
 
 /*----------------------------------------------------------------
    Function: OS_DirRemove_Impl
@@ -114,5 +111,4 @@ int32 OS_DirRewind_Impl(uint32 local_id);
  ------------------------------------------------------------------*/
 int32 OS_DirRemove_Impl(const char *local_path);
 
-#endif  /* INCLUDE_OS_SHARED_DIR_H_ */
-
+#endif /* OS_SHARED_DIR_H  */

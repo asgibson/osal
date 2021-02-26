@@ -19,8 +19,8 @@
  */
 
 /* OSAL coverage stub replacement for sys/ioctl.h */
-#ifndef _OSAL_STUB_SYS_IOCTL_H_
-#define _OSAL_STUB_SYS_IOCTL_H_
+#ifndef OCS_SYS_IOCTL_H
+#define OCS_SYS_IOCTL_H
 
 #include <OCS_basetypes.h>
 
@@ -36,8 +36,6 @@
 /* prototypes normally declared in sys/ioctl.h */
 /* ----------------------------------------- */
 
-extern int OCS_ioctl (int fd, unsigned long request, ...);
+extern int OCS_ioctl(int fd, unsigned long request, ...);
 
-
-#endif /* _OSAL_STUB_SYS_IOCTL_H_ */
-
+#endif /*  OCS_SYS_IOCTL_H */

@@ -28,6 +28,7 @@
  *   2005/07/26  A. Cudmore      | Initial version for linux
  */
 
+#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -49,7 +50,7 @@ OS_BSP_GenericLinuxGlobalData_t OS_BSP_GenericLinuxGlobal;
 void OS_BSP_Initialize(void)
 {
     FILE *fp;
-    char buffer[32];
+    char  buffer[32];
 
     /*
      * If not running as root, check /proc/sys/fs/mqueue/msg_max
@@ -64,12 +65,12 @@ void OS_BSP_Initialize(void)
      */
     if (geteuid() != 0)
     {
-        fp = fopen("/proc/sys/fs/mqueue/msg_max","r");
+        fp = fopen("/proc/sys/fs/mqueue/msg_max", "r");
         if (fp)
         {
-            if (fgets(buffer,sizeof(buffer),fp) != NULL)
+            if (fgets(buffer, sizeof(buffer), fp) != NULL)
             {
-                OS_BSP_Global.MaxQueueDepth = strtoul(buffer, NULL, 10);
+                OS_BSP_Global.MaxQueueDepth = OSAL_BLOCKCOUNT_C(strtoul(buffer, NULL, 10));
                 BSP_DEBUG("Maximum user msg queue depth = %u\n", (unsigned int)OS_BSP_Global.MaxQueueDepth);
             }
             fclose(fp);
@@ -89,22 +90,21 @@ int OS_BSP_GetReturnStatus(void)
 
     switch (OS_BSP_Global.AppStatus)
     {
-    case OS_SUCCESS:
-        /* translate OS_SUCCESS to the system EXIT_SUCCESS value (usually 0) */
-        retcode = EXIT_SUCCESS;
-        break;
+        case OS_SUCCESS:
+            /* translate OS_SUCCESS to the system EXIT_SUCCESS value (usually 0) */
+            retcode = EXIT_SUCCESS;
+            break;
 
-    case OS_ERROR:
-        /* translate OS_ERROR to the system EXIT_FAILURE value (usually 1) */
-        retcode = EXIT_FAILURE;
-        break;
+        case OS_ERROR:
+            /* translate OS_ERROR to the system EXIT_FAILURE value (usually 1) */
+            retcode = EXIT_FAILURE;
+            break;
 
-    default:
-        /* any other value will be passed through (implementation-defined) */
-        /* Range is limited to 0-127, however */
-        retcode = OS_BSP_Global.AppStatus & 0x7F;
-        break;
-
+        default:
+            /* any other value will be passed through (implementation-defined) */
+            /* Range is limited to 0-127, however */
+            retcode = OS_BSP_Global.AppStatus & 0x7F;
+            break;
     }
 
     return retcode;
@@ -119,7 +119,6 @@ void OS_BSP_Shutdown_Impl(void)
 {
     abort();
 }
-
 
 /******************************************************************************
 **  Function:  main()

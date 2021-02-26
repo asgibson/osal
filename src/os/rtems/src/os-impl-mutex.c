@@ -45,29 +45,24 @@
                                      DEFINES
  ***************************************************************************************/
 
-
 /*
  * Define all of the RTEMS semaphore attributes
  *    In RTEMS, a MUTEX is defined as a binary semaphore
  *    It allows nested locks, priority wait order, and supports priority inheritance
  */
 
-#define OSAL_MUTEX_ATTRIBS      (RTEMS_PRIORITY | RTEMS_BINARY_SEMAPHORE | RTEMS_INHERIT_PRIORITY)
-
+#define OSAL_MUTEX_ATTRIBS (RTEMS_PRIORITY | RTEMS_BINARY_SEMAPHORE | RTEMS_INHERIT_PRIORITY)
 
 /****************************************************************************************
                                    GLOBAL DATA
  ***************************************************************************************/
 
 /* Tables where the OS object information is stored */
-OS_impl_mutex_internal_record_t    OS_impl_mutex_table       [OS_MAX_MUTEXES];
-
+OS_impl_mutex_internal_record_t OS_impl_mutex_table[OS_MAX_MUTEXES];
 
 /****************************************************************************************
                                   MUTEX API
  ***************************************************************************************/
-
-
 
 /*----------------------------------------------------------------
  *
@@ -82,7 +77,6 @@ int32 OS_Rtems_MutexAPI_Impl_Init(void)
     return (OS_SUCCESS);
 } /* end OS_Rtems_MutexAPI_Impl_Init */
 
-
 /*----------------------------------------------------------------
  *
  * Function: OS_MutSemCreate_Impl
@@ -91,30 +85,29 @@ int32 OS_Rtems_MutexAPI_Impl_Init(void)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_MutSemCreate_Impl (uint32 sem_id, uint32 options)
+int32 OS_MutSemCreate_Impl(const OS_object_token_t *token, uint32 options)
 {
-    rtems_status_code   status;
-    rtems_name          r_name;
+    rtems_status_code                status;
+    rtems_name                       r_name;
+    OS_impl_mutex_internal_record_t *impl;
+
+    impl = OS_OBJECT_TABLE_GET(OS_impl_mutex_table, *token);
 
     /*
     ** Try to create the mutex
     */
-    r_name = OS_ObjectIdToInteger(OS_global_mutex_table[sem_id].active_id);
-    status = rtems_semaphore_create ( r_name, 1,
-                                      OSAL_MUTEX_ATTRIBS ,
-                                      0,
-                                      &OS_impl_mutex_table[sem_id].id );
+    r_name = OS_ObjectIdToInteger(OS_ObjectIdFromToken(token));
+    status = rtems_semaphore_create(r_name, 1, OSAL_MUTEX_ATTRIBS, 0, &impl->id);
 
-    if ( status != RTEMS_SUCCESSFUL )
+    if (status != RTEMS_SUCCESSFUL)
     {
-        OS_DEBUG("Unhandled semaphore_create error: %s\n",rtems_status_text(status));
+        OS_DEBUG("Unhandled semaphore_create error: %s\n", rtems_status_text(status));
         return OS_SEM_FAILURE;
     }
 
     return OS_SUCCESS;
 
 } /* end OS_MutSemCreate_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -124,23 +117,24 @@ int32 OS_MutSemCreate_Impl (uint32 sem_id, uint32 options)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_MutSemDelete_Impl (uint32 sem_id)
+int32 OS_MutSemDelete_Impl(const OS_object_token_t *token)
 {
-    rtems_status_code status;
+    rtems_status_code                status;
+    OS_impl_mutex_internal_record_t *impl;
 
-    status = rtems_semaphore_delete( OS_impl_mutex_table[sem_id].id);
+    impl = OS_OBJECT_TABLE_GET(OS_impl_mutex_table, *token);
+
+    status = rtems_semaphore_delete(impl->id);
     if (status != RTEMS_SUCCESSFUL)
     {
         /* clean up? */
-        OS_DEBUG("Unhandled semaphore_delete error: %s\n",rtems_status_text(status));
+        OS_DEBUG("Unhandled semaphore_delete error: %s\n", rtems_status_text(status));
         return OS_SEM_FAILURE;
     }
 
     return OS_SUCCESS;
 
 } /* end OS_MutSemDelete_Impl */
-
-
 
 /*----------------------------------------------------------------
  *
@@ -150,23 +144,25 @@ int32 OS_MutSemDelete_Impl (uint32 sem_id)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_MutSemGive_Impl (uint32 sem_id)
+int32 OS_MutSemGive_Impl(const OS_object_token_t *token)
 {
-    rtems_status_code status;
+    rtems_status_code                status;
+    OS_impl_mutex_internal_record_t *impl;
+
+    impl = OS_OBJECT_TABLE_GET(OS_impl_mutex_table, *token);
 
     /* Give the mutex */
-    status = rtems_semaphore_release(OS_impl_mutex_table[sem_id].id);
+    status = rtems_semaphore_release(impl->id);
 
-    if(status != RTEMS_SUCCESSFUL)
+    if (status != RTEMS_SUCCESSFUL)
     {
-        OS_DEBUG("Unhandled semaphore_release error: %s\n",rtems_status_text(status));
+        OS_DEBUG("Unhandled semaphore_release error: %s\n", rtems_status_text(status));
         return OS_SEM_FAILURE;
     }
 
-    return  OS_SUCCESS;
+    return OS_SUCCESS;
 
 } /* end OS_MutSemGive_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -176,22 +172,24 @@ int32 OS_MutSemGive_Impl (uint32 sem_id)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_MutSemTake_Impl (uint32 sem_id)
+int32 OS_MutSemTake_Impl(const OS_object_token_t *token)
 {
-    rtems_status_code status;
+    rtems_status_code                status;
+    OS_impl_mutex_internal_record_t *impl;
 
-    status = rtems_semaphore_obtain(OS_impl_mutex_table[sem_id].id, RTEMS_WAIT, RTEMS_NO_TIMEOUT);
+    impl = OS_OBJECT_TABLE_GET(OS_impl_mutex_table, *token);
+
+    status = rtems_semaphore_obtain(impl->id, RTEMS_WAIT, RTEMS_NO_TIMEOUT);
 
     if (status != RTEMS_SUCCESSFUL)
     {
-        OS_DEBUG("Unhandled semaphore_obtain error: %s\n",rtems_status_text(status));
+        OS_DEBUG("Unhandled semaphore_obtain error: %s\n", rtems_status_text(status));
         return OS_SEM_FAILURE;
     }
 
     return OS_SUCCESS;
 
 } /* end OS_MutSemTake_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -201,10 +199,9 @@ int32 OS_MutSemTake_Impl (uint32 sem_id)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_MutSemGetInfo_Impl (uint32 sem_id, OS_mut_sem_prop_t *mut_prop)
+int32 OS_MutSemGetInfo_Impl(const OS_object_token_t *token, OS_mut_sem_prop_t *mut_prop)
 {
     /* RTEMS provides no additional info */
     return OS_SUCCESS;
 
 } /* end OS_MutSemGetInfo_Impl */
-

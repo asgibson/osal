@@ -25,7 +25,6 @@
  *
  */
 
-
 #include "os-vxworks-coveragetest.h"
 #include "ut-adaptor-binsem.h"
 
@@ -51,10 +50,12 @@ void Test_OS_BinSemCreate_Impl(void)
      * Test Case For:
      * int32 OS_BinSemCreate_Impl (uint32 sem_id, uint32 initial_value, uint32 options)
      */
-    OSAPI_TEST_FUNCTION_RC(OS_BinSemCreate_Impl(0,0,0), OS_SUCCESS);
+    OS_object_token_t token = UT_TOKEN_0;
 
-    UT_SetForceFail(UT_KEY(OCS_semBInitialize), OCS_ERROR);
-    OSAPI_TEST_FUNCTION_RC(OS_BinSemCreate_Impl(0,0,0), OS_SEM_FAILURE);
+    OSAPI_TEST_FUNCTION_RC(OS_BinSemCreate_Impl(&token, 0, 0), OS_SUCCESS);
+
+    UT_SetDefaultReturnValue(UT_KEY(OCS_semBInitialize), OCS_ERROR);
+    OSAPI_TEST_FUNCTION_RC(OS_BinSemCreate_Impl(&token, 0, 0), OS_SEM_FAILURE);
 }
 
 void Test_OS_BinSemDelete_Impl(void)
@@ -63,7 +64,9 @@ void Test_OS_BinSemDelete_Impl(void)
      * Test Case For:
      * int32 OS_BinSemDelete_Impl (uint32 sem_id)
      */
-    OSAPI_TEST_FUNCTION_RC(OS_BinSemDelete_Impl(0), OS_SUCCESS);
+    OS_object_token_t token = UT_TOKEN_0;
+
+    OSAPI_TEST_FUNCTION_RC(OS_BinSemDelete_Impl(&token), OS_SUCCESS);
 }
 
 void Test_OS_BinSemGive_Impl(void)
@@ -72,10 +75,12 @@ void Test_OS_BinSemGive_Impl(void)
      * Test Case For:
      * int32 OS_BinSemGive_Impl ( uint32 sem_id )
      */
-    OSAPI_TEST_FUNCTION_RC(OS_BinSemGive_Impl(0), OS_SUCCESS);
+    OS_object_token_t token = UT_TOKEN_0;
 
-    UT_SetForceFail(UT_StubKey_GenericSemGive, OS_SEM_FAILURE);
-    OSAPI_TEST_FUNCTION_RC(OS_BinSemGive_Impl(0), OS_SEM_FAILURE);
+    OSAPI_TEST_FUNCTION_RC(OS_BinSemGive_Impl(&token), OS_SUCCESS);
+
+    UT_SetDefaultReturnValue(UT_StubKey_GenericSemGive, OS_SEM_FAILURE);
+    OSAPI_TEST_FUNCTION_RC(OS_BinSemGive_Impl(&token), OS_SEM_FAILURE);
 }
 
 void Test_OS_BinSemFlush_Impl(void)
@@ -84,10 +89,12 @@ void Test_OS_BinSemFlush_Impl(void)
      * Test Case For:
      * int32 OS_BinSemFlush_Impl (uint32 sem_id)
      */
-    OSAPI_TEST_FUNCTION_RC(OS_BinSemFlush_Impl(0), OS_SUCCESS);
+    OS_object_token_t token = UT_TOKEN_0;
 
-    UT_SetForceFail(UT_KEY(OCS_semFlush), OCS_ERROR);
-    OSAPI_TEST_FUNCTION_RC(OS_BinSemFlush_Impl(0), OS_SEM_FAILURE);
+    OSAPI_TEST_FUNCTION_RC(OS_BinSemFlush_Impl(&token), OS_SUCCESS);
+
+    UT_SetDefaultReturnValue(UT_KEY(OCS_semFlush), OCS_ERROR);
+    OSAPI_TEST_FUNCTION_RC(OS_BinSemFlush_Impl(&token), OS_SEM_FAILURE);
 }
 
 void Test_OS_BinSemTake_Impl(void)
@@ -96,7 +103,9 @@ void Test_OS_BinSemTake_Impl(void)
      * Test Case For:
      * int32 OS_BinSemTake_Impl ( uint32 sem_id )
      */
-    OSAPI_TEST_FUNCTION_RC(OS_BinSemTake_Impl(0), OS_SUCCESS);
+    OS_object_token_t token = UT_TOKEN_0;
+
+    OSAPI_TEST_FUNCTION_RC(OS_BinSemTake_Impl(&token), OS_SUCCESS);
 }
 
 void Test_OS_BinSemTimedWait_Impl(void)
@@ -105,13 +114,15 @@ void Test_OS_BinSemTimedWait_Impl(void)
      * Test Case For:
      * int32 OS_BinSemTimedWait_Impl ( uint32 sem_id, uint32 msecs )
      */
-    OSAPI_TEST_FUNCTION_RC(OS_BinSemTimedWait_Impl(0,100), OS_SUCCESS);
+    OS_object_token_t token = UT_TOKEN_0;
 
-    UT_SetForceFail(UT_StubKey_GenericSemTake, OS_SEM_FAILURE);
-    OSAPI_TEST_FUNCTION_RC(OS_BinSemTimedWait_Impl(0,100), OS_SEM_FAILURE);
+    OSAPI_TEST_FUNCTION_RC(OS_BinSemTimedWait_Impl(&token, 100), OS_SUCCESS);
 
-    UT_SetForceFail(UT_KEY(OS_Milli2Ticks), OS_ERROR);
-    OSAPI_TEST_FUNCTION_RC(OS_BinSemTimedWait_Impl(0,100), OS_ERROR);
+    UT_SetDefaultReturnValue(UT_StubKey_GenericSemTake, OS_SEM_FAILURE);
+    OSAPI_TEST_FUNCTION_RC(OS_BinSemTimedWait_Impl(&token, 100), OS_SEM_FAILURE);
+
+    UT_SetDefaultReturnValue(UT_KEY(OS_Milli2Ticks), OS_ERROR);
+    OSAPI_TEST_FUNCTION_RC(OS_BinSemTimedWait_Impl(&token, 100), OS_ERROR);
 }
 
 void Test_OS_BinSemGetInfo_Impl(void)
@@ -121,8 +132,10 @@ void Test_OS_BinSemGetInfo_Impl(void)
      * int32 OS_BinSemGetInfo_Impl (uint32 sem_id, OS_bin_sem_prop_t *sem_prop)
      */
     OS_bin_sem_prop_t sem_prop;
+    OS_object_token_t token = UT_TOKEN_0;
+
     memset(&sem_prop, 0xEE, sizeof(sem_prop));
-    OSAPI_TEST_FUNCTION_RC(OS_BinSemGetInfo_Impl(0,&sem_prop), OS_SUCCESS);
+    OSAPI_TEST_FUNCTION_RC(OS_BinSemGetInfo_Impl(&token, &sem_prop), OS_SUCCESS);
 }
 
 /* ------------------- End of test cases --------------------------------------*/
@@ -148,10 +161,7 @@ void Osapi_Test_Setup(void)
  * Purpose:
  *   Called by the unit test tool to tear down the app after each test
  */
-void Osapi_Test_Teardown(void)
-{
-
-}
+void Osapi_Test_Teardown(void) {}
 
 /* UtTest_Setup
  *
@@ -169,5 +179,3 @@ void UtTest_Setup(void)
     ADD_TEST(OS_BinSemTimedWait_Impl);
     ADD_TEST(OS_BinSemGetInfo_Impl);
 }
-
-

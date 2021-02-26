@@ -25,20 +25,8 @@
  *
  */
 
-#ifndef INCLUDE_OS_PORTABLE_COVERAGETEST_H_
-#define INCLUDE_OS_PORTABLE_COVERAGETEST_H_
-
-
-
-/**
- * \file     os-vxworks-coveragetest.h
- * \ingroup  vxworks
- * \author   joseph.p.hickey@nasa.gov
- *
- */
-
-#ifndef _OS_PORTABLE_COVERAGETEST_H_
-#define _OS_PORTABLE_COVERAGETEST_H_
+#ifndef OS_PORTABLE_COVERAGETEST_H
+#define OS_PORTABLE_COVERAGETEST_H
 
 /*
  * Includes
@@ -48,19 +36,27 @@
 #include <uttest.h>
 #include <utstubs.h>
 
-
 #include "os-shared-globaldefs.h"
 
+#define OSAPI_TEST_FUNCTION_RC(func, args, exp)                                                                \
+    {                                                                                                          \
+        int32 rcexp = exp;                                                                                     \
+        int32 rcact = func args;                                                                               \
+        UtAssert_True(rcact == rcexp, "%s%s (%ld) == %s (%ld)", #func, #args, (long)rcact, #exp, (long)rcexp); \
+    }
 
-#define OSAPI_TEST_FUNCTION_RC(func,args,exp)   \
-{                                               \
-    int32 rcexp = exp;                          \
-    int32 rcact = func args;                    \
-    UtAssert_True(rcact == rcexp, "%s%s (%ld) == %s (%ld)", \
-        #func, #args, (long)rcact, #exp, (long)rcexp);      \
-}
+#define ADD_TEST(test) UtTest_Add((Test_##test), Osapi_Test_Setup, Osapi_Test_Teardown, #test)
 
-#define ADD_TEST(test) UtTest_Add((Test_ ## test), Osapi_Test_Setup, Osapi_Test_Teardown, #test)
+/*
+ * The default/primary table index used by most coverage tests.
+ */
+#define UT_INDEX_0 OSAL_INDEX_C(0)
+
+/*
+ * A secondary table index for coverage tests which require
+ * more than one entry
+ */
+#define UT_INDEX_1 OSAL_INDEX_C(1)
 
 /* Osapi_Test_Setup
  *
@@ -70,9 +66,4 @@
 void Osapi_Test_Setup(void);
 void Osapi_Test_Teardown(void);
 
-
-#endif  /* _OS_PORTABLE_COVERAGETEST_H_ */
-
-
-#endif  /* INCLUDE_OS_PORTABLE_COVERAGETEST_H_ */
-
+#endif /* OS_PORTABLE_COVERAGETEST_H  */

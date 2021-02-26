@@ -34,8 +34,8 @@
 ** Macros
 **--------------------------------------------------------------------------------*/
 
-#define UT_OS_FS_BLOCK_SIZE  512
-#define UT_OS_FS_MAX_BLOCKS   20
+#define UT_OS_FS_BLOCK_SIZE 512
+#define UT_OS_FS_MAX_BLOCKS 20
 
 /*--------------------------------------------------------------------------------*
 ** Data types
@@ -49,17 +49,17 @@
 ** Global variables
 **--------------------------------------------------------------------------------*/
 
-char* g_fsAddrPtr = NULL;
+char *g_fsAddrPtr = NULL;
 
-int32 g_blkSize = UT_OS_FS_BLOCK_SIZE;
-int32 g_blkCnt  = UT_OS_FS_MAX_BLOCKS;
+size_t            g_blkSize = {UT_OS_FS_BLOCK_SIZE};
+osal_blockcount_t g_blkCnt  = {UT_OS_FS_MAX_BLOCKS};
 
-char  g_fsLongName[UT_OS_PATH_BUFF_SIZE];
-char  g_physDriveName[UT_OS_PHYS_NAME_BUFF_SIZE];
+char g_fsLongName[UT_OS_PATH_BUFF_SIZE];
+char g_physDriveName[UT_OS_PHYS_NAME_BUFF_SIZE];
 
-char  g_volNames[UT_OS_FILESYS_LIST_LEN][UT_OS_NAME_BUFF_SIZE];
-char  g_devNames[UT_OS_FILESYS_LIST_LEN][UT_OS_FILE_BUFF_SIZE];
-char  g_mntNames[UT_OS_FILESYS_LIST_LEN][UT_OS_FILE_BUFF_SIZE];
+char g_volNames[UT_OS_FILESYS_LIST_LEN][UT_OS_NAME_BUFF_SIZE];
+char g_devNames[UT_OS_FILESYS_LIST_LEN][UT_OS_FILE_BUFF_SIZE];
+char g_mntNames[UT_OS_FILESYS_LIST_LEN][UT_OS_FILE_BUFF_SIZE];
 
 /*--------------------------------------------------------------------------------*
 ** Local function prototypes
@@ -74,8 +74,8 @@ void UT_os_init_fs_misc(void);
 void UT_os_init_fs_misc()
 {
     memset(g_fsLongName, 'X', sizeof(g_fsLongName));
-    g_fsLongName[0] = '/';
-    g_fsLongName[sizeof(g_fsLongName)-1] = '\0';
+    g_fsLongName[0]                        = '/';
+    g_fsLongName[sizeof(g_fsLongName) - 1] = '\0';
 
     strcpy(g_devNames[0], "/ramdev0");
     strcpy(g_volNames[0], " ");
@@ -135,8 +135,7 @@ void UtTest_Setup(void)
     UtTest_Add(UT_os_translatepath_test, NULL, NULL, "OS_TranslatePath (internal)");
 
     UtTest_Add(UT_os_checkfs_test, NULL, NULL, "OS_chkfs");
-    UtTest_Add(UT_os_fsblocksfree_test, NULL, NULL, "OS_fsBlocksFree");
-    UtTest_Add(UT_os_fsbytesfree_test, NULL, NULL, "OS_fsBytesFree");
+    UtTest_Add(UT_os_fsstatvolume_test, NULL, NULL, "OS_FileSysStatVolume");
 }
 
 /*================================================================================*

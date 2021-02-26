@@ -42,9 +42,8 @@
  *    BSP-provided console or debug terminal device.
  */
 
-#ifndef INCLUDE_OCS_BSP_IMPL_H_
-#define INCLUDE_OCS_BSP_IMPL_H_
-
+#ifndef OCS_BSP_IMPL_H
+#define OCS_BSP_IMPL_H
 
 #include <OCS_basetypes.h>
 
@@ -71,7 +70,7 @@
 
        Note: This should write the string as-is without buffering.
  ------------------------------------------------------------------*/
-extern void OCS_OS_BSP_ConsoleOutput_Impl(const char *Str, uint32_t DataLen);
+extern void OCS_OS_BSP_ConsoleOutput_Impl(const char *Str, size_t DataLen);
 
 /*----------------------------------------------------------------
    Function: OS_BSP_ConsoleSetMode_Impl
@@ -91,6 +90,4 @@ extern void OCS_OS_BSP_ConsoleOutput_Impl(const char *Str, uint32_t DataLen);
  ------------------------------------------------------------------*/
 extern void OCS_OS_BSP_ConsoleSetMode_Impl(uint32_t ModeBits);
 
-
-#endif  /* INCLUDE_OCS_BSP_IMPL_H_ */
-
+#endif /* OCS_BSP_IMPL_H  */

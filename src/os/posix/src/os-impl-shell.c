@@ -44,13 +44,10 @@
                                      GLOBALS
  ***************************************************************************************/
 
-
-
 /****************************************************************************************
                          IMPLEMENTATION-SPECIFIC ROUTINES
              These are specific to this particular operating system
  ****************************************************************************************/
-
 
 /*----------------------------------------------------------------
  *
@@ -60,56 +57,58 @@
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_ShellOutputToFile_Impl(uint32 file_id, const char* Cmd)
+int32 OS_ShellOutputToFile_Impl(const OS_object_token_t *token, const char *Cmd)
 {
-   pid_t cpid;
-   uint32 local_id;
-   int wstat;
-   const char *shell = getenv("SHELL");
+    pid_t                           cpid;
+    uint32                          local_id;
+    int                             wstat;
+    const char *                    shell = getenv("SHELL");
+    OS_impl_file_internal_record_t *impl;
 
-   if (shell == NULL)
-   {
-       shell = "/bin/sh";
-   }
+    impl = OS_OBJECT_TABLE_GET(OS_impl_filehandle_table, *token);
 
-   cpid = fork();
-   if (cpid < 0)
-   {
-       OS_DEBUG("%s(): Error during fork(): %s\n", __func__, strerror(errno));
-       return OS_ERROR;
-   }
+    if (shell == NULL)
+    {
+        shell = "/bin/sh";
+    }
 
-   if (cpid == 0)
-   {
-       /* child process */
-       dup2(OS_impl_filehandle_table[file_id].fd, STDOUT_FILENO);
-       dup2(OS_impl_filehandle_table[file_id].fd, STDERR_FILENO);
+    cpid = fork();
+    if (cpid < 0)
+    {
+        OS_DEBUG("%s(): Error during fork(): %s\n", __func__, strerror(errno));
+        return OS_ERROR;
+    }
 
-       /* close all _other_ filehandles */
-       for (local_id = 0; local_id < OS_MAX_NUM_OPEN_FILES; ++local_id)
-       {
-           if (OS_global_stream_table[local_id].active_id != 0)
-           {
-               close(OS_impl_filehandle_table[local_id].fd);
-           }
-       }
+    if (cpid == 0)
+    {
+        /* child process */
+        dup2(impl->fd, STDOUT_FILENO);
+        dup2(impl->fd, STDERR_FILENO);
 
-       execl(shell, "sh", "-c", Cmd, NULL); /* does not return if successful */
-       exit(EXIT_FAILURE);
-   }
+        /* close all _other_ filehandles */
+        for (local_id = 0; local_id < OS_MAX_NUM_OPEN_FILES; ++local_id)
+        {
+            if (OS_global_stream_table[local_id].active_id != 0)
+            {
+                close(OS_impl_filehandle_table[local_id].fd);
+            }
+        }
 
-   if (waitpid(cpid, &wstat, 0) != cpid)
-   {
-       OS_DEBUG("%s(): Error during waitpid(): %s\n", __func__, strerror(errno));
-       return OS_ERROR;
-   }
+        execl(shell, "sh", "-c", Cmd, NULL); /* does not return if successful */
+        exit(EXIT_FAILURE);
+    }
 
-   if (!WIFEXITED(wstat) || WEXITSTATUS(wstat) != 0)
-   {
-       OS_DEBUG("%s(): Error from child process: %d\n", __func__, wstat);
-       return OS_ERROR;
-   }
+    if (waitpid(cpid, &wstat, 0) != cpid)
+    {
+        OS_DEBUG("%s(): Error during waitpid(): %s\n", __func__, strerror(errno));
+        return OS_ERROR;
+    }
 
-   return OS_SUCCESS;
+    if (!WIFEXITED(wstat) || WEXITSTATUS(wstat) != 0)
+    {
+        OS_DEBUG("%s(): Error from child process: %d\n", __func__, wstat);
+        return OS_ERROR;
+    }
+
+    return OS_SUCCESS;
 } /* end OS_ShellOutputToFile_Impl */
-

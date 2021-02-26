@@ -25,8 +25,8 @@
  *
  */
 
-#ifndef INCLUDE_OCS_HOSTLIB_H_
-#define INCLUDE_OCS_HOSTLIB_H_
+#ifndef OCS_HOSTLIB_H
+#define OCS_HOSTLIB_H
 
 #include <OCS_basetypes.h>
 #include <OCS_vxWorks.h>
@@ -42,8 +42,6 @@
 /* ----------------------------------------- */
 /* prototypes normally declared in hostLib.h */
 /* ----------------------------------------- */
-extern int   OCS_hostGetByName (char *name);
+extern int OCS_hostGetByName(char *name);
 
-
-#endif  /* INCLUDE_OCS_HOSTLIB_H_ */
-
+#endif /* OCS_HOSTLIB_H  */

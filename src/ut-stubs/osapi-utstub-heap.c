@@ -32,8 +32,8 @@
  * can be executed.
  */
 
+#include "osapi-heap.h" /* OSAL public API for this subsystem */
 #include "utstub-helpers.h"
-
 
 /*****************************************************************************
  *
@@ -49,15 +49,13 @@ int32 OS_HeapGetInfo(OS_heap_prop_t *heap_prop)
     status = UT_DEFAULT_IMPL(OS_HeapGetInfo);
 
     if (status == OS_SUCCESS &&
-            UT_Stub_CopyToLocal(UT_KEY(OS_HeapGetInfo), heap_prop, sizeof(*heap_prop)) < sizeof(*heap_prop))
+        UT_Stub_CopyToLocal(UT_KEY(OS_HeapGetInfo), heap_prop, sizeof(*heap_prop)) < sizeof(*heap_prop))
     {
         /* Return some random data */
-        heap_prop->free_bytes = (uint32) 12345;
-        heap_prop->free_blocks = (uint32) 6789;
-        heap_prop->largest_free_block = (uint32) 100;
+        heap_prop->free_bytes         = OSAL_SIZE_C(12345);
+        heap_prop->free_blocks        = OSAL_BLOCKCOUNT_C(6789);
+        heap_prop->largest_free_block = OSAL_SIZE_C(100);
     }
 
     return status;
 }
-
-

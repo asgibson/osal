@@ -25,11 +25,11 @@
  *
  */
 
-#ifndef INCLUDE_OS_SHARED_HEAP_H_
-#define INCLUDE_OS_SHARED_HEAP_H_
+#ifndef OS_SHARED_HEAP_H
+#define OS_SHARED_HEAP_H
 
+#include "osapi-heap.h"
 #include <os-shared-globaldefs.h>
-
 
 /****************************************************************************************
                     MEMORY HEAP API LOW-LEVEL IMPLEMENTATION FUNCTIONS
@@ -48,5 +48,4 @@
  ------------------------------------------------------------------*/
 int32 OS_HeapGetInfo_Impl(OS_heap_prop_t *heap_prop);
 
-#endif  /* INCLUDE_OS_SHARED_HEAP_H_ */
-
+#endif /* OS_SHARED_HEAP_H  */

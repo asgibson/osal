@@ -32,13 +32,12 @@
  * can be executed.
  */
 
+#include "osapi-network.h" /* OSAL public API for this subsystem */
 #include "utstub-helpers.h"
 
+UT_DEFAULT_STUB(OS_NetworkAPI_Init, (void))
 
-UT_DEFAULT_STUB(OS_NetworkAPI_Init,(void))
-
-
-int32 OS_NetworkGetHostName(char *host_name, uint32 name_len)
+int32 OS_NetworkGetHostName(char *host_name, size_t name_len)
 {
     UT_Stub_RegisterContext(UT_KEY(OS_NetworkGetHostName), host_name);
     UT_Stub_RegisterContextGenericArg(UT_KEY(OS_NetworkGetHostName), name_len);
@@ -48,10 +47,10 @@ int32 OS_NetworkGetHostName(char *host_name, uint32 name_len)
     status = UT_DEFAULT_IMPL(OS_NetworkGetHostName);
 
     if (status == OS_SUCCESS && name_len > 0 &&
-            UT_Stub_CopyToLocal(UT_KEY(OS_NetworkGetHostName), host_name, name_len) == 0)
+        UT_Stub_CopyToLocal(UT_KEY(OS_NetworkGetHostName), host_name, name_len) == 0)
     {
-        strncpy(host_name, "ut", name_len-1);
-        host_name[name_len-1] = 0;
+        strncpy(host_name, "ut", name_len - 1);
+        host_name[name_len - 1] = 0;
     }
 
     return status;
@@ -65,7 +64,4 @@ int32 OS_NetworkGetID(void)
 
     return status;
 
-}/* end OS_NetworkGetID */
-
-
-
+} /* end OS_NetworkGetID */

@@ -18,7 +18,6 @@
  *  limitations under the License.
  */
 
-
 /**
  * \file     osapi-utstub-mutex.c
  * \author   joseph.p.hickey@nasa.gov
@@ -31,10 +30,10 @@
  * can be executed.
  */
 
+#include "osapi-mutex.h" /* OSAL public API for this subsystem */
 #include "utstub-helpers.h"
 
-
-UT_DEFAULT_STUB(OS_MutexAPI_Init,(void))
+UT_DEFAULT_STUB(OS_MutexAPI_Init, (void))
 
 /*****************************************************************************/
 /**
@@ -71,7 +70,7 @@ int32 OS_MutSemCreate(osal_id_t *sem_id, const char *sem_name, uint32 options)
 
     if (status == OS_SUCCESS)
     {
-        *sem_id = UT_AllocStubObjId(UT_OBJTYPE_MUTEX);
+        *sem_id = UT_AllocStubObjId(OS_OBJECT_TYPE_OS_MUTEX);
     }
     else
     {
@@ -111,7 +110,7 @@ int32 OS_MutSemDelete(osal_id_t sem_id)
 
     if (status == OS_SUCCESS)
     {
-        UT_DeleteStubObjId(UT_OBJTYPE_MUTEX, sem_id);
+        UT_DeleteStubObjId(OS_OBJECT_TYPE_OS_MUTEX, sem_id);
     }
 
     return status;
@@ -184,7 +183,7 @@ int32 OS_MutSemTake(osal_id_t sem_id)
  * Stub function for OS_MutSemGetIdByName()
  *
  *****************************************************************************/
-int32 OS_MutSemGetIdByName (osal_id_t *sem_id, const char *sem_name)
+int32 OS_MutSemGetIdByName(osal_id_t *sem_id, const char *sem_name)
 {
     UT_Stub_RegisterContext(UT_KEY(OS_MutSemGetIdByName), sem_id);
     UT_Stub_RegisterContext(UT_KEY(OS_MutSemGetIdByName), sem_name);
@@ -194,14 +193,13 @@ int32 OS_MutSemGetIdByName (osal_id_t *sem_id, const char *sem_name)
     status = UT_DEFAULT_IMPL(OS_MutSemGetIdByName);
 
     if (status == OS_SUCCESS &&
-            UT_Stub_CopyToLocal(UT_KEY(OS_MutSemGetIdByName), sem_id, sizeof(*sem_id)) < sizeof(*sem_id))
+        UT_Stub_CopyToLocal(UT_KEY(OS_MutSemGetIdByName), sem_id, sizeof(*sem_id)) < sizeof(*sem_id))
     {
-        UT_ObjIdCompose(1, UT_OBJTYPE_MUTEX, sem_id);
+        UT_ObjIdCompose(1, OS_OBJECT_TYPE_OS_MUTEX, sem_id);
     }
 
     return status;
 }
-
 
 /*****************************************************************************/
 /**
@@ -229,15 +227,12 @@ int32 OS_MutSemGetInfo(osal_id_t sem_id, OS_mut_sem_prop_t *mut_prop)
     status = UT_DEFAULT_IMPL(OS_MutSemGetInfo);
 
     if (status == OS_SUCCESS &&
-            UT_Stub_CopyToLocal(UT_KEY(OS_MutSemGetInfo), mut_prop, sizeof(*mut_prop)) < sizeof(*mut_prop))
+        UT_Stub_CopyToLocal(UT_KEY(OS_MutSemGetInfo), mut_prop, sizeof(*mut_prop)) < sizeof(*mut_prop))
     {
-        strncpy(mut_prop->name, "Name", OS_MAX_API_NAME - 1);
-        mut_prop->name[OS_MAX_API_NAME - 1] = '\0';
-        UT_ObjIdCompose(1, UT_OBJTYPE_TASK, &mut_prop->creator);
+        strncpy(mut_prop->name, "Name", sizeof(mut_prop->name) - 1);
+        mut_prop->name[sizeof(mut_prop->name) - 1] = '\0';
+        UT_ObjIdCompose(1, OS_OBJECT_TYPE_OS_TASK, &mut_prop->creator);
     }
 
     return status;
 }
-
-
-

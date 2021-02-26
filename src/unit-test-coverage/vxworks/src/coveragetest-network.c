@@ -49,11 +49,10 @@ void Test_OS_NetworkGetHostName_Impl(void)
     char buffer[16];
 
     OSAPI_TEST_FUNCTION_RC(OS_NetworkGetHostName_Impl(buffer, sizeof(buffer)), OS_SUCCESS);
-    UT_SetForceFail(UT_KEY(OCS_gethostname), -1);
+    UT_SetDefaultReturnValue(UT_KEY(OCS_gethostname), -1);
     OSAPI_TEST_FUNCTION_RC(OS_NetworkGetHostName_Impl(buffer, sizeof(buffer)), OS_ERROR);
 
 } /* end OS_NetworkGetHostName_Impl */
-
 
 void Test_OS_NetworkGetID_Impl(void)
 
@@ -64,13 +63,12 @@ void Test_OS_NetworkGetID_Impl(void)
      */
     int32 IdBuf;
 
-    UT_SetForceFail(UT_KEY(OCS_hostGetByName), 1234);
+    UT_SetDefaultReturnValue(UT_KEY(OCS_hostGetByName), 1234);
     OSAPI_TEST_FUNCTION_RC(OS_NetworkGetID_Impl(&IdBuf), OS_SUCCESS);
     UtAssert_True(IdBuf == 1234, "IdBuf (%ld) == 1234", (long)IdBuf);
-    UT_SetForceFail(UT_KEY(OCS_hostGetByName), OCS_ERROR);
+    UT_SetDefaultReturnValue(UT_KEY(OCS_hostGetByName), OCS_ERROR);
     OSAPI_TEST_FUNCTION_RC(OS_NetworkGetID_Impl(&IdBuf), OS_ERROR);
 } /* end OS_NetworkGetID_Impl */
-
 
 /* ------------------- End of test cases --------------------------------------*/
 
@@ -90,10 +88,7 @@ void Osapi_Test_Setup(void)
  * Purpose:
  *   Called by the unit test tool to tear down the app after each test
  */
-void Osapi_Test_Teardown(void)
-{
-
-}
+void Osapi_Test_Teardown(void) {}
 
 /* UtTest_Setup
  *
@@ -105,4 +100,3 @@ void UtTest_Setup(void)
     ADD_TEST(OS_NetworkGetID_Impl);
     ADD_TEST(OS_NetworkGetHostName_Impl);
 }
-

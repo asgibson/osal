@@ -19,8 +19,8 @@
  */
 
 /* OSAL coverage stub replacement for ctype.h */
-#ifndef _OSAL_OVERRIDE_CTYPE_H_
-#define _OSAL_OVERRIDE_CTYPE_H_
+#ifndef OSAL_OVERRIDE_CTYPE_H
+#define OSAL_OVERRIDE_CTYPE_H
 
 #include <OCS_ctype.h>
 
@@ -28,6 +28,6 @@
 /* mappings for declarations in ctype.h */
 /* ----------------------------------------- */
 
-#define isgraph                  OCS_isgraph
+#define isgraph OCS_isgraph
 
-#endif /* _OSAL_OVERRIDE_CTYPE_H_ */
+#endif /* OSAL_OVERRIDE_CTYPE_H */

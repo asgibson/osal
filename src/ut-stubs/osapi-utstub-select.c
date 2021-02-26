@@ -30,8 +30,8 @@
  * can be executed.
  */
 
+#include "osapi-select.h" /* OSAL public API for this subsystem */
 #include "utstub-helpers.h"
-
 
 /*****************************************************************************
  *
@@ -112,11 +112,11 @@ int32 OS_SelectFdClear(OS_FdSet *Set, osal_id_t objid)
     UT_Stub_RegisterContext(UT_KEY(OS_SelectFdClear), Set);
     UT_Stub_RegisterContextGenericArg(UT_KEY(OS_SelectFdClear), objid);
 
-   int32 return_code;
+    int32 return_code;
 
-   return_code = UT_DEFAULT_IMPL(OS_SelectFdClear);
+    return_code = UT_DEFAULT_IMPL(OS_SelectFdClear);
 
-   return return_code;
+    return return_code;
 }
 
 /*****************************************************************************
@@ -129,10 +129,9 @@ bool OS_SelectFdIsSet(OS_FdSet *Set, osal_id_t objid)
     UT_Stub_RegisterContext(UT_KEY(OS_SelectFdIsSet), Set);
     UT_Stub_RegisterContextGenericArg(UT_KEY(OS_SelectFdIsSet), objid);
 
-   int32 return_code;
+    int32 return_code;
 
-   return_code = UT_DEFAULT_IMPL(OS_SelectFdIsSet);
+    return_code = UT_DEFAULT_IMPL(OS_SelectFdIsSet);
 
-   return (return_code == 0);
+    return (return_code == 0);
 }
-

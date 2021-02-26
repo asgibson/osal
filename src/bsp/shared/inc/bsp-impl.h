@@ -40,10 +40,14 @@
  *    BSP-provided console or debug terminal device.
  */
 
-#ifndef _osapi_bsp_impl_
-#define _osapi_bsp_impl_
+#ifndef BSP_IMPL_H
+#define BSP_IMPL_H
 
-#include "osapi.h"
+#include <stdio.h>
+
+#include "osapi-common.h"
+#include "osapi-bsp.h"
+#include "osapi-error.h"
 
 /*
  * A set of simplified console control options
@@ -62,7 +66,7 @@
 #define OS_BSP_CONSOLEMODE_BLUE      0x4 /**< Blue text, if terminal supports color */
 #define OS_BSP_CONSOLEMODE_HIGHLIGHT 0x8 /**< Highlighted/Emphasis text, if terminal supports it */
 
-#define OS_BSP_CONSOLEMODE_TO_ANSICOLOR(x)  ((x) & 0x07)
+#define OS_BSP_CONSOLEMODE_TO_ANSICOLOR(x) ((x)&0x07)
 
 /*
  * Macro for BSP debug messages, similar to OS_DEBUG in OSAL code.
@@ -90,10 +94,10 @@
 */
 typedef struct
 {
-    uint32 ArgC;      /* number of boot/startup parameters in ArgV */
-    char **ArgV;      /* strings for boot/startup parameters */
-    int32  AppStatus; /* value which can be returned to the OS (0=nominal) */
-    uint32 MaxQueueDepth;   /* Queue depth limit supported by BSP (0=no limit) */
+    uint32            ArgC;          /* number of boot/startup parameters in ArgV */
+    char **           ArgV;          /* strings for boot/startup parameters */
+    int32             AppStatus;     /* value which can be returned to the OS (0=nominal) */
+    osal_blockcount_t MaxQueueDepth; /* Queue depth limit supported by BSP (0=no limit) */
 } OS_BSP_GlobalData_t;
 
 /*
@@ -118,7 +122,7 @@ extern OS_BSP_GlobalData_t OS_BSP_Global;
 
        Note: This should write the string as-is without buffering.
  ------------------------------------------------------------------*/
-void OS_BSP_ConsoleOutput_Impl(const char *Str, uint32 DataLen);
+void OS_BSP_ConsoleOutput_Impl(const char *Str, size_t DataLen);
 
 /*----------------------------------------------------------------
    Function: OS_BSP_ConsoleSetMode_Impl
@@ -151,4 +155,4 @@ void OS_BSP_Shutdown_Impl(void);
 /*********************
    END bsp-impl.h
  *********************/
-#endif /* _osapi_bsp_impl_ */
+#endif /* BSP_IMPL_H */

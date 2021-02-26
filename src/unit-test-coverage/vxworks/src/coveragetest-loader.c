@@ -50,13 +50,15 @@ void Test_OS_ModuleLoad_Impl(void)
     /* Test Case For:
      * int32 OS_ModuleLoad_Impl ( uint32 module_id, char *translated_path )
      */
-    OSAPI_TEST_FUNCTION_RC(OS_ModuleLoad_Impl(0,"local"), OS_SUCCESS);
-    UT_SetForceFail(UT_KEY(OCS_open), -1);
-    OSAPI_TEST_FUNCTION_RC(OS_ModuleLoad_Impl(0,"local"), OS_ERROR);
-    UT_ClearForceFail(UT_KEY(OCS_open));
-    UT_SetForceFail(UT_KEY(OCS_loadModule), OCS_ERROR);
-    OSAPI_TEST_FUNCTION_RC(OS_ModuleLoad_Impl(0,"local"), OS_ERROR);
-    UT_ClearForceFail(UT_KEY(OCS_loadModule));
+    OS_object_token_t token = UT_TOKEN_0;
+
+    OSAPI_TEST_FUNCTION_RC(OS_ModuleLoad_Impl(&token, "local"), OS_SUCCESS);
+    UT_SetDefaultReturnValue(UT_KEY(OCS_open), -1);
+    OSAPI_TEST_FUNCTION_RC(OS_ModuleLoad_Impl(&token, "local"), OS_ERROR);
+    UT_ClearDefaultReturnValue(UT_KEY(OCS_open));
+    UT_SetDefaultReturnValue(UT_KEY(OCS_loadModule), OCS_ERROR);
+    OSAPI_TEST_FUNCTION_RC(OS_ModuleLoad_Impl(&token, "local"), OS_ERROR);
+    UT_ClearDefaultReturnValue(UT_KEY(OCS_loadModule));
 }
 
 void Test_OS_ModuleUnload_Impl(void)
@@ -64,10 +66,12 @@ void Test_OS_ModuleUnload_Impl(void)
     /* Test Case For:
      * int32 OS_ModuleUnload_Impl ( uint32 module_id )
      */
-    OSAPI_TEST_FUNCTION_RC(OS_ModuleUnload_Impl(0), OS_SUCCESS);
-    UT_SetForceFail(UT_KEY(OCS_unldByModuleId), OCS_ERROR);
-    OSAPI_TEST_FUNCTION_RC(OS_ModuleUnload_Impl(0), OS_ERROR);
-    UT_ClearForceFail(UT_KEY(OCS_unldByModuleId));
+    OS_object_token_t token = UT_TOKEN_0;
+
+    OSAPI_TEST_FUNCTION_RC(OS_ModuleUnload_Impl(&token), OS_SUCCESS);
+    UT_SetDefaultReturnValue(UT_KEY(OCS_unldByModuleId), OCS_ERROR);
+    OSAPI_TEST_FUNCTION_RC(OS_ModuleUnload_Impl(&token), OS_ERROR);
+    UT_ClearDefaultReturnValue(UT_KEY(OCS_unldByModuleId));
 }
 
 void Test_OS_ModuleGetInfo_Impl(void)
@@ -75,10 +79,11 @@ void Test_OS_ModuleGetInfo_Impl(void)
     /* Test Case For:
      * int32 OS_ModuleGetInfo_Impl ( uint32 module_id, OS_module_prop_t *module_prop )
      */
-    OS_module_prop_t module_prop;
+    OS_module_prop_t  module_prop;
+    OS_object_token_t token = UT_TOKEN_0;
 
     memset(&module_prop, 0, sizeof(module_prop));
-    OSAPI_TEST_FUNCTION_RC(OS_ModuleGetInfo_Impl(0,&module_prop), OS_SUCCESS);
+    OSAPI_TEST_FUNCTION_RC(OS_ModuleGetInfo_Impl(&token, &module_prop), OS_SUCCESS);
     UtAssert_True(module_prop.addr.valid, "addresses in output valid");
 
     /*
@@ -86,12 +91,11 @@ void Test_OS_ModuleGetInfo_Impl(void)
      * but the boolean in the output struct should be false.
      */
     memset(&module_prop, 0, sizeof(module_prop));
-    UT_SetForceFail(UT_KEY(OCS_moduleInfoGet), OCS_ERROR);
-    OSAPI_TEST_FUNCTION_RC(OS_ModuleGetInfo_Impl(0,&module_prop), OS_SUCCESS);
-    UT_ClearForceFail(UT_KEY(OCS_moduleInfoGet));
+    UT_SetDefaultReturnValue(UT_KEY(OCS_moduleInfoGet), OCS_ERROR);
+    OSAPI_TEST_FUNCTION_RC(OS_ModuleGetInfo_Impl(&token, &module_prop), OS_SUCCESS);
+    UT_ClearDefaultReturnValue(UT_KEY(OCS_moduleInfoGet));
     UtAssert_True(!module_prop.addr.valid, "addresses in output not valid");
 }
-
 
 /* ------------------- End of test cases --------------------------------------*/
 
@@ -116,11 +120,7 @@ void Osapi_Test_Setup(void)
  * Purpose:
  *   Called by the unit test tool to tear down the app after each test
  */
-void Osapi_Test_Teardown(void)
-{
-
-}
-
+void Osapi_Test_Teardown(void) {}
 
 /* UtTest_Setup
  *
@@ -134,5 +134,3 @@ void UtTest_Setup(void)
     ADD_TEST(OS_ModuleUnload_Impl);
     ADD_TEST(OS_ModuleGetInfo_Impl);
 }
-
-

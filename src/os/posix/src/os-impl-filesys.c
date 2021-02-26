@@ -29,7 +29,6 @@
                                     INCLUDE FILES
  ***************************************************************************************/
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,7 +44,7 @@
 
 #include "os-posix.h"
 #include "os-shared-filesys.h"
-
+#include "os-shared-idmap.h"
 
 /****************************************************************************************
                                      DEFINES
@@ -72,11 +71,9 @@ int32 OS_Posix_FileSysAPI_Impl_Init(void)
     return OS_SUCCESS;
 } /* end OS_Posix_FileSysAPI_Impl_Init */
 
-
 /*
  * System Level API
  */
-
 
 /*----------------------------------------------------------------
  *
@@ -86,12 +83,12 @@ int32 OS_Posix_FileSysAPI_Impl_Init(void)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_FileSysStartVolume_Impl (uint32 filesys_id)
+int32 OS_FileSysStartVolume_Impl(const OS_object_token_t *token)
 {
-    OS_filesys_internal_record_t  *local = &OS_filesys_table[filesys_id];
-    struct stat stat_buf;
-    const char *tmpdir;
-    uint32 i;
+    OS_filesys_internal_record_t *local;
+    struct stat                   stat_buf;
+    const char *                  tmpdir;
+    uint32                        i;
     enum
     {
         VOLATILE_DISK_LOC_DEV_SHM,
@@ -101,11 +98,13 @@ int32 OS_FileSysStartVolume_Impl (uint32 filesys_id)
         VOLATILE_DISK_LOC_MAX
     };
 
+    local = OS_OBJECT_TABLE_GET(OS_filesys_table, *token);
+
     /*
      * Determine basic type of filesystem, if not already known
      */
     if (local->fstype == OS_FILESYS_TYPE_UNKNOWN &&
-            strncmp(local->device_name, OS_POSIX_DEVICEFILE_PREFIX, sizeof(OS_POSIX_DEVICEFILE_PREFIX)-1) == 0)
+        strncmp(local->device_name, OS_POSIX_DEVICEFILE_PREFIX, sizeof(OS_POSIX_DEVICEFILE_PREFIX) - 1) == 0)
     {
         /*
          * If referring to a real device in the /dev filesystem,
@@ -129,37 +128,37 @@ int32 OS_FileSysStartVolume_Impl (uint32 filesys_id)
     if (local->fstype == OS_FILESYS_TYPE_VOLATILE_DISK)
     {
         /* find a suitable location to keep the volatile disk */
-        for (i=0; i <= VOLATILE_DISK_LOC_MAX; ++i)
+        for (i = 0; i <= VOLATILE_DISK_LOC_MAX; ++i)
         {
-            switch(i)
+            switch (i)
             {
-            case VOLATILE_DISK_LOC_DEV_SHM:
-                /* This is most preferable because it should actually be a ramdisk */
-                tmpdir = "/dev/shm";
-                break;
-            case VOLATILE_DISK_LOC_ENV:
-                /* try the TMPDIR environment variable, if set */
-                tmpdir = getenv("TMPDIR");
-                break;
-            case VOLATILE_DISK_LOC_VARTMP:
-                /* try /var/tmp directory */
-                tmpdir = "/var/tmp";
-                break;
-            case VOLATILE_DISK_LOC_TMP:
-                /* use /tmp directory as a last resort */
-                tmpdir = "/tmp";
-                break;
-            default:
-                tmpdir = NULL;
-                break;
+                case VOLATILE_DISK_LOC_DEV_SHM:
+                    /* This is most preferable because it should actually be a ramdisk */
+                    tmpdir = "/dev/shm";
+                    break;
+                case VOLATILE_DISK_LOC_ENV:
+                    /* try the TMPDIR environment variable, if set */
+                    tmpdir = getenv("TMPDIR");
+                    break;
+                case VOLATILE_DISK_LOC_VARTMP:
+                    /* try /var/tmp directory */
+                    tmpdir = "/var/tmp";
+                    break;
+                case VOLATILE_DISK_LOC_TMP:
+                    /* use /tmp directory as a last resort */
+                    tmpdir = "/tmp";
+                    break;
+                default:
+                    tmpdir = NULL;
+                    break;
             }
 
             if (tmpdir != NULL && stat(tmpdir, &stat_buf) == 0)
             {
                 /* check if the user has write permission to the directory */
-                if ( (stat_buf.st_mode & S_IWOTH) != 0 ||
-                        ((stat_buf.st_mode & S_IWGRP) != 0 && stat_buf.st_gid == getegid()) ||
-                        ((stat_buf.st_mode & S_IWUSR) != 0 && stat_buf.st_uid == geteuid()))
+                if ((stat_buf.st_mode & S_IWOTH) != 0 ||
+                    ((stat_buf.st_mode & S_IWGRP) != 0 && stat_buf.st_gid == getegid()) ||
+                    ((stat_buf.st_mode & S_IWUSR) != 0 && stat_buf.st_uid == geteuid()))
                 {
                     break;
                 }
@@ -173,14 +172,12 @@ int32 OS_FileSysStartVolume_Impl (uint32 filesys_id)
             return OS_FS_ERR_DRIVE_NOT_CREATED;
         }
 
-        snprintf(local->system_mountpt, sizeof(local->system_mountpt),
-                "%s/osal:%s", tmpdir, local->volume_name);
+        snprintf(local->system_mountpt, sizeof(local->system_mountpt), "%s/osal:%s", tmpdir, local->volume_name);
     }
 
     return OS_SUCCESS;
 
 } /* end OS_FileSysStartVolume_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -190,7 +187,7 @@ int32 OS_FileSysStartVolume_Impl (uint32 filesys_id)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_FileSysStopVolume_Impl (uint32 filesys_id)
+int32 OS_FileSysStopVolume_Impl(const OS_object_token_t *token)
 {
     /*
      * This is a no-op.
@@ -213,7 +210,7 @@ int32 OS_FileSysStopVolume_Impl (uint32 filesys_id)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_FileSysFormatVolume_Impl (uint32 filesys_id)
+int32 OS_FileSysFormatVolume_Impl(const OS_object_token_t *token)
 {
     /*
      * In theory, this should wipe any existing files in the ramdisk,
@@ -228,7 +225,6 @@ int32 OS_FileSysFormatVolume_Impl (uint32 filesys_id)
 
 } /* end OS_FileSysFormatVolume_Impl */
 
-
 /*----------------------------------------------------------------
  *
  * Function: OS_FileSysMountVolume_Impl
@@ -237,10 +233,12 @@ int32 OS_FileSysFormatVolume_Impl (uint32 filesys_id)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_FileSysMountVolume_Impl (uint32 filesys_id)
+int32 OS_FileSysMountVolume_Impl(const OS_object_token_t *token)
 {
-    OS_filesys_internal_record_t  *local = &OS_filesys_table[filesys_id];
-    struct stat stat_buf;
+    OS_filesys_internal_record_t *local;
+    struct stat                   stat_buf;
+
+    local = OS_OBJECT_TABLE_GET(OS_filesys_table, *token);
 
     /*
      * This will do a mkdir() for the mount point if it does
@@ -250,15 +248,13 @@ int32 OS_FileSysMountVolume_Impl (uint32 filesys_id)
     {
         if (mkdir(local->system_mountpt, 0700) < 0)
         {
-            OS_DEBUG("ERROR: Cannot create mount point %s: %s",
-                    local->system_mountpt, strerror(errno));
+            OS_DEBUG("ERROR: Cannot create mount point %s: %s", local->system_mountpt, strerror(errno));
             return OS_FS_ERR_DRIVE_NOT_CREATED;
         }
     }
-    else if (!S_ISDIR(stat_buf.st_mode) )
+    else if (!S_ISDIR(stat_buf.st_mode))
     {
-        OS_DEBUG("ERROR: Volume %s exists and is not a directory",
-                local->system_mountpt);
+        OS_DEBUG("ERROR: Volume %s exists and is not a directory", local->system_mountpt);
         return OS_FS_ERR_DRIVE_NOT_CREATED;
     }
 
@@ -273,13 +269,11 @@ int32 OS_FileSysMountVolume_Impl (uint32 filesys_id)
      * mount point exists.  For any other FS type, trigger an
      * error to indicate that it is not implemented in this OSAL.
      */
-    if (local->fstype != OS_FILESYS_TYPE_VOLATILE_DISK &&
-            local->fstype != OS_FILESYS_TYPE_FS_BASED)
+    if (local->fstype != OS_FILESYS_TYPE_VOLATILE_DISK && local->fstype != OS_FILESYS_TYPE_FS_BASED)
     {
         /* the mount command is not implemented for this FS type */
         return OS_ERR_NOT_IMPLEMENTED;
     }
-
 
     return OS_SUCCESS;
 
@@ -293,7 +287,7 @@ int32 OS_FileSysMountVolume_Impl (uint32 filesys_id)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_FileSysUnmountVolume_Impl (uint32 filesys_id)
+int32 OS_FileSysUnmountVolume_Impl(const OS_object_token_t *token)
 {
     /*
      * NOTE: Mounting/Unmounting on POSIX is not implemented.
@@ -314,23 +308,24 @@ int32 OS_FileSysUnmountVolume_Impl (uint32 filesys_id)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_FileSysStatVolume_Impl (uint32 filesys_id, OS_statvfs_t *result)
+int32 OS_FileSysStatVolume_Impl(const OS_object_token_t *token, OS_statvfs_t *result)
 {
-   OS_filesys_internal_record_t  *local = &OS_filesys_table[filesys_id];
-   struct statvfs stat_buf;
+    OS_filesys_internal_record_t *local;
+    struct statvfs                stat_buf;
 
-   if ( statvfs(local->system_mountpt, &stat_buf) != 0 )
-   {
-       return OS_ERROR;
-   }
+    local = OS_OBJECT_TABLE_GET(OS_filesys_table, *token);
 
-   result->block_size = stat_buf.f_bsize;
-   result->blocks_free = stat_buf.f_bfree;
-   result->total_blocks = stat_buf.f_blocks;
+    if (statvfs(local->system_mountpt, &stat_buf) != 0)
+    {
+        return OS_ERROR;
+    }
 
-   return(OS_SUCCESS);
+    result->block_size   = OSAL_SIZE_C(stat_buf.f_bsize);
+    result->blocks_free  = OSAL_BLOCKCOUNT_C(stat_buf.f_bfree);
+    result->total_blocks = OSAL_BLOCKCOUNT_C(stat_buf.f_blocks);
+
+    return (OS_SUCCESS);
 } /* end OS_FileSysStatVolume_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -340,8 +335,7 @@ int32 OS_FileSysStatVolume_Impl (uint32 filesys_id, OS_statvfs_t *result)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_FileSysCheckVolume_Impl (uint32 filesys_id, bool repair)
+int32 OS_FileSysCheckVolume_Impl(const OS_object_token_t *token, bool repair)
 {
     return OS_ERR_NOT_IMPLEMENTED;
 } /* end OS_FileSysCheckVolume_Impl */
-

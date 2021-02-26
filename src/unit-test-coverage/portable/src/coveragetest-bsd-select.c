@@ -26,6 +26,7 @@
 #include "os-portable-coveragetest.h"
 #include "ut-adaptor-portable-posix-io.h"
 #include "os-shared-select.h"
+#include "os-shared-idmap.h"
 
 #include <OCS_sys_select.h>
 
@@ -34,43 +35,43 @@ void Test_OS_SelectSingle_Impl(void)
     /* Test Case For:
      * int32 OS_SelectSingle_Impl(uint32 stream_id, uint32 *SelectFlags, int32 msecs)
      */
-    uint32 SelectFlags;
-    uint32 StreamID;
+    uint32              SelectFlags;
+    OS_object_token_t   token;
     struct OCS_timespec nowtime;
     struct OCS_timespec latertime;
 
-    StreamID = 0;
-    UT_PortablePosixIOTest_Set_Selectable(0, false);
+    memset(&token, 0, sizeof(token));
+
+    UT_PortablePosixIOTest_Set_Selectable(UT_INDEX_0, false);
     SelectFlags = OS_STREAM_STATE_READABLE | OS_STREAM_STATE_WRITABLE;
-    OSAPI_TEST_FUNCTION_RC(OS_SelectSingle_Impl, (StreamID, &SelectFlags, 0), OS_ERR_OPERATION_NOT_SUPPORTED);
-    UT_PortablePosixIOTest_Set_Selectable(0, true);
-    OSAPI_TEST_FUNCTION_RC(OS_SelectSingle_Impl, (StreamID, &SelectFlags, 0), OS_SUCCESS);
+    OSAPI_TEST_FUNCTION_RC(OS_SelectSingle_Impl, (&token, &SelectFlags, 0), OS_ERR_OPERATION_NOT_SUPPORTED);
+    UT_PortablePosixIOTest_Set_Selectable(UT_INDEX_0, true);
+    OSAPI_TEST_FUNCTION_RC(OS_SelectSingle_Impl, (&token, &SelectFlags, 0), OS_SUCCESS);
     SelectFlags = OS_STREAM_STATE_READABLE | OS_STREAM_STATE_WRITABLE;
-    OSAPI_TEST_FUNCTION_RC(OS_SelectSingle_Impl, (StreamID, &SelectFlags, -1), OS_SUCCESS);
+    OSAPI_TEST_FUNCTION_RC(OS_SelectSingle_Impl, (&token, &SelectFlags, -1), OS_SUCCESS);
     SelectFlags = 0;
-    OSAPI_TEST_FUNCTION_RC(OS_SelectSingle_Impl, (StreamID, &SelectFlags, 0), OS_SUCCESS);
+    OSAPI_TEST_FUNCTION_RC(OS_SelectSingle_Impl, (&token, &SelectFlags, 0), OS_SUCCESS);
 
-    UT_SetForceFail(UT_KEY(OCS_select), 0);
-    SelectFlags = OS_STREAM_STATE_READABLE | OS_STREAM_STATE_WRITABLE;
-    nowtime.tv_sec = 1;
-    nowtime.tv_nsec = 500000000;
-    latertime.tv_sec = 10;
+    UT_SetDefaultReturnValue(UT_KEY(OCS_select), 0);
+    SelectFlags       = OS_STREAM_STATE_READABLE | OS_STREAM_STATE_WRITABLE;
+    nowtime.tv_sec    = 1;
+    nowtime.tv_nsec   = 500000000;
+    latertime.tv_sec  = 10;
     latertime.tv_nsec = 0;
-    UT_SetDataBuffer(UT_KEY(OCS_clock_gettime),&nowtime, sizeof(nowtime), false);
-    UT_SetDataBuffer(UT_KEY(OCS_clock_gettime),&latertime, sizeof(latertime), false);
-    OSAPI_TEST_FUNCTION_RC(OS_SelectSingle_Impl, (StreamID, &SelectFlags, 999), OS_ERROR_TIMEOUT);
+    UT_SetDataBuffer(UT_KEY(OCS_clock_gettime), &nowtime, sizeof(nowtime), false);
+    UT_SetDataBuffer(UT_KEY(OCS_clock_gettime), &latertime, sizeof(latertime), false);
+    OSAPI_TEST_FUNCTION_RC(OS_SelectSingle_Impl, (&token, &SelectFlags, 999), OS_ERROR_TIMEOUT);
 
-    UT_SetForceFail(UT_KEY(OCS_select), -1);
-    SelectFlags = OS_STREAM_STATE_READABLE | OS_STREAM_STATE_WRITABLE;
-    nowtime.tv_sec = 1;
-    nowtime.tv_nsec = 0;
-    latertime.tv_sec = 2;
+    UT_SetDefaultReturnValue(UT_KEY(OCS_select), -1);
+    SelectFlags       = OS_STREAM_STATE_READABLE | OS_STREAM_STATE_WRITABLE;
+    nowtime.tv_sec    = 1;
+    nowtime.tv_nsec   = 0;
+    latertime.tv_sec  = 2;
     latertime.tv_nsec = 600000000;
-    UT_SetDataBuffer(UT_KEY(OCS_clock_gettime),&nowtime, sizeof(nowtime), false);
-    UT_SetDataBuffer(UT_KEY(OCS_clock_gettime),&latertime, sizeof(latertime), false);
-    OSAPI_TEST_FUNCTION_RC(OS_SelectSingle_Impl, (StreamID, &SelectFlags, 2100), OS_ERROR);
+    UT_SetDataBuffer(UT_KEY(OCS_clock_gettime), &nowtime, sizeof(nowtime), false);
+    UT_SetDataBuffer(UT_KEY(OCS_clock_gettime), &latertime, sizeof(latertime), false);
+    OSAPI_TEST_FUNCTION_RC(OS_SelectSingle_Impl, (&token, &SelectFlags, 2100), OS_ERROR);
 } /* end OS_SelectSingle_Impl */
-
 
 void Test_OS_SelectMultiple_Impl(void)
 {
@@ -85,11 +86,9 @@ void Test_OS_SelectMultiple_Impl(void)
     OSAPI_TEST_FUNCTION_RC(OS_SelectMultiple_Impl, (&ReadSet, &WriteSet, 0), OS_SUCCESS);
     memset(&ReadSet, 0xff, sizeof(ReadSet));
     memset(&WriteSet, 0, sizeof(WriteSet));
-    UT_SetForceFail(UT_KEY(OCS_select), 0);
+    UT_SetDefaultReturnValue(UT_KEY(OCS_select), 0);
     OSAPI_TEST_FUNCTION_RC(OS_SelectMultiple_Impl, (&ReadSet, &WriteSet, 1), OS_ERROR_TIMEOUT);
 } /* end OS_SelectMultiple_Impl */
-
-
 
 /* ------------------- End of test cases --------------------------------------*/
 
@@ -109,11 +108,7 @@ void Osapi_Test_Setup(void)
  * Purpose:
  *   Called by the unit test tool to tear down the app after each test
  */
-void Osapi_Test_Teardown(void)
-{
-
-}
-
+void Osapi_Test_Teardown(void) {}
 
 /* UtTest_Setup
  *
@@ -125,7 +120,3 @@ void UtTest_Setup(void)
     ADD_TEST(OS_SelectSingle_Impl);
     ADD_TEST(OS_SelectMultiple_Impl);
 }
-
-
-
-

@@ -25,20 +25,18 @@
  *
  */
 
-
 /* pull in the OSAL configuration */
 #include "osconfig.h"
 #include "ut-adaptor-portable-posix-files.h"
 
 #include <os-impl-files.h>
 
-unsigned int UT_PortablePosixFileTest_GetSelfEUID(void)
+OCS_uid_t UT_PortablePosixFileTest_GetSelfEUID(void)
 {
     return OS_IMPL_SELF_EUID;
 }
 
-unsigned int UT_PortablePosixFileTest_GetSelfEGID(void)
+OCS_gid_t UT_PortablePosixFileTest_GetSelfEGID(void)
 {
     return OS_IMPL_SELF_EGID;
 }
-

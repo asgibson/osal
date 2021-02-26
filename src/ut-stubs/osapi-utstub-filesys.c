@@ -32,19 +32,17 @@
  * can be executed.
  */
 
+#include "osapi-filesys.h" /* OSAL public API for this subsystem */
 #include "utstub-helpers.h"
 
-
-UT_DEFAULT_STUB(OS_FileSysAPI_Init,(void))
-
+UT_DEFAULT_STUB(OS_FileSysAPI_Init, (void))
 
 /*****************************************************************************
  *
  * Stub function for OS_FileSysAddFixedMap()
  *
  *****************************************************************************/
-int32           OS_FileSysAddFixedMap(osal_id_t *filesys_id, const char *phys_path,
-                                const char *virt_path)
+int32 OS_FileSysAddFixedMap(osal_id_t *filesys_id, const char *phys_path, const char *virt_path)
 {
     UT_Stub_RegisterContext(UT_KEY(OS_FileSysAddFixedMap), filesys_id);
     UT_Stub_RegisterContext(UT_KEY(OS_FileSysAddFixedMap), phys_path);
@@ -56,26 +54,22 @@ int32           OS_FileSysAddFixedMap(osal_id_t *filesys_id, const char *phys_pa
 
     if (status == OS_SUCCESS)
     {
-        *filesys_id = UT_AllocStubObjId(UT_OBJTYPE_FILESYS);
+        *filesys_id = UT_AllocStubObjId(OS_OBJECT_TYPE_OS_FILESYS);
     }
     else
     {
         *filesys_id = UT_STUB_FAKE_OBJECT_ID;
     }
 
-
-
     return status;
 }
-
 
 /*****************************************************************************
  *
  * Stub function for OS_mkfs()
  *
  *****************************************************************************/
-int32 OS_mkfs(char *address, const char *devname, const char * volname, uint32 blocksize,
-              uint32 numblocks)
+int32 OS_mkfs(char *address, const char *devname, const char *volname, size_t blocksize, osal_blockcount_t numblocks)
 {
     UT_Stub_RegisterContext(UT_KEY(OS_mkfs), address);
     UT_Stub_RegisterContext(UT_KEY(OS_mkfs), devname);
@@ -111,8 +105,7 @@ int32 OS_rmfs(const char *devname)
  * Stub function for OS_initfs()
  *
  *****************************************************************************/
-int32 OS_initfs(char *address, const char *devname, const char *volname,
-                uint32 blocksize, uint32 numblocks)
+int32 OS_initfs(char *address, const char *devname, const char *volname, size_t blocksize, osal_blockcount_t numblocks)
 {
     UT_Stub_RegisterContext(UT_KEY(OS_initfs), address);
     UT_Stub_RegisterContext(UT_KEY(OS_initfs), devname);
@@ -132,7 +125,7 @@ int32 OS_initfs(char *address, const char *devname, const char *volname,
  * Stub function for OS_mount()
  *
  *****************************************************************************/
-int32 OS_mount(const char *devname, const char* mountpoint)
+int32 OS_mount(const char *devname, const char *mountpoint)
 {
     UT_Stub_RegisterContext(UT_KEY(OS_mount), devname);
     UT_Stub_RegisterContext(UT_KEY(OS_mount), mountpoint);
@@ -162,38 +155,22 @@ int32 OS_unmount(const char *mountpoint)
 
 /*****************************************************************************
  *
- * Stub function for OS_fsBlocksFree()
+ * Stub function for OS_FileSysStatVolume()
  *
  *****************************************************************************/
-int32 OS_fsBlocksFree(const char *name)
+int32 OS_FileSysStatVolume(const char *name, OS_statvfs_t *statbuf)
 {
-    UT_Stub_RegisterContext(UT_KEY(OS_fsBlocksFree), name);
+    UT_Stub_RegisterContext(UT_KEY(OS_FileSysStatVolume), name);
+    UT_Stub_RegisterContext(UT_KEY(OS_FileSysStatVolume), statbuf);
 
     int32 status;
 
-    status = UT_DEFAULT_IMPL_RC(OS_fsBlocksFree, 100);
-
-    return status;
-}
-
-/*****************************************************************************
- *
- * Stub function for OS_fsBytesFree()
- *
- *****************************************************************************/
-int32 OS_fsBytesFree(const char *name, uint64 *bytes_free)
-{
-    UT_Stub_RegisterContext(UT_KEY(OS_fsBytesFree), name);
-    UT_Stub_RegisterContext(UT_KEY(OS_fsBytesFree), bytes_free);
-
-    int32 status;
-
-    status = UT_DEFAULT_IMPL(OS_fsBytesFree);
+    status = UT_DEFAULT_IMPL(OS_FileSysStatVolume);
 
     if (status == OS_SUCCESS &&
-            UT_Stub_CopyToLocal(UT_KEY(OS_fsBytesFree), bytes_free, sizeof(*bytes_free)) < sizeof(*bytes_free))
+        UT_Stub_CopyToLocal(UT_KEY(OS_FileSysStatVolume), statbuf, sizeof(*statbuf)) < sizeof(*statbuf))
     {
-        *bytes_free = 10000;
+        memset(statbuf, 0, sizeof(*statbuf));
     }
 
     return status;
@@ -221,7 +198,7 @@ int32 OS_chkfs(const char *name, bool repair)
  * Stub function for OS_FS_GetPhysDriveName()
  *
  *****************************************************************************/
-int32 OS_FS_GetPhysDriveName(char * PhysDriveName, const char * MountPoint)
+int32 OS_FS_GetPhysDriveName(char *PhysDriveName, const char *MountPoint)
 {
     UT_Stub_RegisterContext(UT_KEY(OS_FS_GetPhysDriveName), PhysDriveName);
     UT_Stub_RegisterContext(UT_KEY(OS_FS_GetPhysDriveName), MountPoint);
@@ -229,7 +206,8 @@ int32 OS_FS_GetPhysDriveName(char * PhysDriveName, const char * MountPoint)
     int32 status;
 
     status = UT_DEFAULT_IMPL(OS_FS_GetPhysDriveName);
-    strncpy(PhysDriveName, MountPoint, OS_FS_PHYS_NAME_LEN);
+    strncpy(PhysDriveName, MountPoint, OS_FS_PHYS_NAME_LEN - 1);
+    PhysDriveName[OS_FS_PHYS_NAME_LEN - 1] = 0;
 
     return status;
 }
@@ -239,14 +217,14 @@ int32 OS_FS_GetPhysDriveName(char * PhysDriveName, const char * MountPoint)
  * Stub function for OS_GetFsInfo()
  *
  *****************************************************************************/
-int32 OS_GetFsInfo(os_fsinfo_t  *filesys_info)
+int32 OS_GetFsInfo(os_fsinfo_t *filesys_info)
 {
     UT_Stub_RegisterContext(UT_KEY(OS_GetFsInfo), filesys_info);
 
     int32 status;
 
     status = UT_DEFAULT_IMPL(OS_GetFsInfo);
-    memset(filesys_info, 0, sizeof (*filesys_info));
+    memset(filesys_info, 0, sizeof(*filesys_info));
 
     return status;
 }
@@ -256,7 +234,7 @@ int32 OS_GetFsInfo(os_fsinfo_t  *filesys_info)
  * Stub function for OS_TranslatePath()
  *
  *****************************************************************************/
-int32 OS_TranslatePath( const char *VirtualPath, char *LocalPath)
+int32 OS_TranslatePath(const char *VirtualPath, char *LocalPath)
 {
     UT_Stub_RegisterContext(UT_KEY(OS_TranslatePath), VirtualPath);
     UT_Stub_RegisterContext(UT_KEY(OS_TranslatePath), LocalPath);
@@ -266,12 +244,11 @@ int32 OS_TranslatePath( const char *VirtualPath, char *LocalPath)
     status = UT_DEFAULT_IMPL(OS_TranslatePath);
 
     if (status == OS_SUCCESS && VirtualPath != NULL && LocalPath != NULL &&
-            UT_Stub_CopyToLocal(UT_KEY(OS_TranslatePath), LocalPath, OS_MAX_LOCAL_PATH_LEN) == 0)
+        UT_Stub_CopyToLocal(UT_KEY(OS_TranslatePath), LocalPath, OS_MAX_LOCAL_PATH_LEN) == 0)
     {
-        strncpy(LocalPath, VirtualPath, OS_MAX_LOCAL_PATH_LEN);
+        strncpy(LocalPath, VirtualPath, OS_MAX_LOCAL_PATH_LEN - 1);
+        LocalPath[OS_MAX_LOCAL_PATH_LEN - 1] = 0;
     }
 
     return status;
 }
-
-

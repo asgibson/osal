@@ -32,18 +32,17 @@
  * can be executed.
  */
 
+#include "osapi-countsem.h" /* OSAL public API for this subsystem */
 #include "utstub-helpers.h"
 
-
-UT_DEFAULT_STUB(OS_CountSemAPI_Init,(void))
+UT_DEFAULT_STUB(OS_CountSemAPI_Init, (void))
 
 /*****************************************************************************
  *
  * Stub function for OS_CountSemCreate()
  *
  *****************************************************************************/
-int32 OS_CountSemCreate(osal_id_t *sem_id, const char *sem_name,
-                      uint32 sem_initial_value, uint32 options)
+int32 OS_CountSemCreate(osal_id_t *sem_id, const char *sem_name, uint32 sem_initial_value, uint32 options)
 {
     UT_Stub_RegisterContext(UT_KEY(OS_CountSemCreate), sem_id);
     UT_Stub_RegisterContext(UT_KEY(OS_CountSemCreate), sem_name);
@@ -56,7 +55,7 @@ int32 OS_CountSemCreate(osal_id_t *sem_id, const char *sem_name,
 
     if (status == OS_SUCCESS)
     {
-        *sem_id = UT_AllocStubObjId(UT_OBJTYPE_COUNTSEM);
+        *sem_id = UT_AllocStubObjId(OS_OBJECT_TYPE_OS_COUNTSEM);
     }
     else
     {
@@ -96,19 +95,18 @@ int32 OS_CountSemDelete(osal_id_t sem_id)
 
     if (status == OS_SUCCESS)
     {
-        UT_DeleteStubObjId(UT_OBJTYPE_COUNTSEM, sem_id);
+        UT_DeleteStubObjId(OS_OBJECT_TYPE_OS_COUNTSEM, sem_id);
     }
 
     return status;
 }
-
 
 /*****************************************************************************
  *
  * Stub for OS_CountSemGive() function
  *
  *****************************************************************************/
-int32 OS_CountSemGive ( osal_id_t sem_id )
+int32 OS_CountSemGive(osal_id_t sem_id)
 {
     UT_Stub_RegisterContextGenericArg(UT_KEY(OS_CountSemGive), sem_id);
 
@@ -124,7 +122,7 @@ int32 OS_CountSemGive ( osal_id_t sem_id )
  * Stub for OS_CountSemTake() function
  *
  *****************************************************************************/
-int32 OS_CountSemTake ( osal_id_t sem_id )
+int32 OS_CountSemTake(osal_id_t sem_id)
 {
     UT_Stub_RegisterContextGenericArg(UT_KEY(OS_CountSemTake), sem_id);
 
@@ -140,7 +138,7 @@ int32 OS_CountSemTake ( osal_id_t sem_id )
  * Stub for OS_CountSemTimedWait() function
  *
  *****************************************************************************/
-int32 OS_CountSemTimedWait ( osal_id_t sem_id, uint32 msecs )
+int32 OS_CountSemTimedWait(osal_id_t sem_id, uint32 msecs)
 {
     UT_Stub_RegisterContextGenericArg(UT_KEY(OS_CountSemTimedWait), sem_id);
     UT_Stub_RegisterContextGenericArg(UT_KEY(OS_CountSemTimedWait), msecs);
@@ -157,7 +155,7 @@ int32 OS_CountSemTimedWait ( osal_id_t sem_id, uint32 msecs )
  * Stub for OS_CountSemGetIdByName() function
  *
  *****************************************************************************/
-int32 OS_CountSemGetIdByName (osal_id_t *sem_id, const char *sem_name)
+int32 OS_CountSemGetIdByName(osal_id_t *sem_id, const char *sem_name)
 {
     UT_Stub_RegisterContext(UT_KEY(OS_CountSemGetIdByName), sem_id);
     UT_Stub_RegisterContext(UT_KEY(OS_CountSemGetIdByName), sem_name);
@@ -167,9 +165,9 @@ int32 OS_CountSemGetIdByName (osal_id_t *sem_id, const char *sem_name)
     status = UT_DEFAULT_IMPL(OS_CountSemGetIdByName);
 
     if (status == OS_SUCCESS &&
-            UT_Stub_CopyToLocal(UT_KEY(OS_CountSemGetIdByName), sem_id, sizeof(*sem_id)) < sizeof(*sem_id))
+        UT_Stub_CopyToLocal(UT_KEY(OS_CountSemGetIdByName), sem_id, sizeof(*sem_id)) < sizeof(*sem_id))
     {
-        UT_ObjIdCompose(1, UT_OBJTYPE_COUNTSEM, sem_id);
+        UT_ObjIdCompose(1, OS_OBJECT_TYPE_OS_COUNTSEM, sem_id);
     }
 
     return status;
@@ -201,16 +199,12 @@ int32 OS_CountSemGetInfo(osal_id_t sem_id, OS_count_sem_prop_t *count_prop)
     status = UT_DEFAULT_IMPL(OS_CountSemGetInfo);
 
     if (status == OS_SUCCESS &&
-            UT_Stub_CopyToLocal(UT_KEY(OS_CountSemGetInfo), count_prop, sizeof(*count_prop)) < sizeof(*count_prop))
+        UT_Stub_CopyToLocal(UT_KEY(OS_CountSemGetInfo), count_prop, sizeof(*count_prop)) < sizeof(*count_prop))
     {
-        UT_ObjIdCompose(1, UT_OBJTYPE_TASK, &count_prop->creator);
-        strncpy(count_prop->name, "Name", OS_MAX_API_NAME - 1);
-        count_prop->name[OS_MAX_API_NAME - 1] = '\0';
+        UT_ObjIdCompose(1, OS_OBJECT_TYPE_OS_TASK, &count_prop->creator);
+        strncpy(count_prop->name, "Name", sizeof(count_prop->name) - 1);
+        count_prop->name[sizeof(count_prop->name) - 1] = '\0';
     }
-
 
     return status;
 }
-
-
-

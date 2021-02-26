@@ -24,8 +24,8 @@
 ** Date:  April 2013
 **================================================================================*/
 
-#ifndef _UT_OSCORE_TASK_TEST_H_
-#define _UT_OSCORE_TASK_TEST_H_
+#ifndef UT_OSCORE_TASK_TEST_H
+#define UT_OSCORE_TASK_TEST_H
 
 /*--------------------------------------------------------------------------------*
 ** Includes
@@ -37,7 +37,7 @@
 ** Macros
 **--------------------------------------------------------------------------------*/
 
-#define UT_OS_TASK_LIST_LEN  (OS_MAX_TASKS + 10)
+#define UT_OS_TASK_LIST_LEN (OS_MAX_TASKS + 10)
 
 /*--------------------------------------------------------------------------------*
 ** Data types
@@ -69,7 +69,7 @@ void UT_os_task_get_id_test(void);
 
 /*--------------------------------------------------------------------------------*/
 
-#endif  /* _UT_OSCORE_TASK_TEST_H_ */
+#endif /* UT_OSCORE_TASK_TEST_H */
 
 /*================================================================================*
 ** End of File: ut_oscore_task_test.h

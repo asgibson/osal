@@ -25,28 +25,25 @@
  *
  */
 
-#ifndef INCLUDE_OS_SHARED_FILE_H_
-#define INCLUDE_OS_SHARED_FILE_H_
+#ifndef OS_SHARED_FILE_H
+#define OS_SHARED_FILE_H
 
+#include "osapi-file.h"
 #include <os-shared-globaldefs.h>
-
 
 typedef struct
 {
-   char      stream_name[OS_MAX_PATH_LEN];
-   uint8     socket_domain;
-   uint8     socket_type;
-   uint16    stream_state;
+    char   stream_name[OS_MAX_PATH_LEN];
+    uint8  socket_domain;
+    uint8  socket_type;
+    uint16 stream_state;
 } OS_stream_internal_record_t;
 
 /*
  * These record types have extra information with each entry.  These tables are used
  * to share extra data between the common layer and the OS-specific implementation.
  */
-extern OS_stream_internal_record_t         OS_stream_table[OS_MAX_NUM_OPEN_FILES];
-
-
-
+extern OS_stream_internal_record_t OS_stream_table[OS_MAX_NUM_OPEN_FILES];
 
 /****************************************************************************************
                  FILE / DIRECTORY API LOW-LEVEL IMPLEMENTATION FUNCTIONS
@@ -59,8 +56,7 @@ extern OS_stream_internal_record_t         OS_stream_table[OS_MAX_NUM_OPEN_FILES
 
    returns: OS_SUCCESS on success, or relevant error code
 ---------------------------------------------------------------------------------------*/
-int32 OS_FileAPI_Init                (void);
-
+int32 OS_FileAPI_Init(void);
 
 /*
  * Generic stream manipulation implementation
@@ -83,7 +79,7 @@ int32 OS_FileAPI_Init                (void);
 
     Returns: File position (non-negative) on success, or relevant error code (negative)
  ------------------------------------------------------------------*/
-int32 OS_GenericSeek_Impl (uint32 local_id, int32 offset, uint32 whence);
+int32 OS_GenericSeek_Impl(const OS_object_token_t *token, int32 offset, uint32 whence);
 
 /*----------------------------------------------------------------
    Function: OS_GenericRead_Impl
@@ -93,7 +89,7 @@ int32 OS_GenericSeek_Impl (uint32 local_id, int32 offset, uint32 whence);
 
     Returns: Number of bytes read (non-negative) on success, or relevant error code (negative)
  ------------------------------------------------------------------*/
-int32 OS_GenericRead_Impl (uint32 local_id, void *buffer, uint32 nbytes, int32 timeout);
+int32 OS_GenericRead_Impl(const OS_object_token_t *token, void *buffer, size_t nbytes, int32 timeout);
 
 /*----------------------------------------------------------------
    Function: OS_GenericWrite_Impl
@@ -103,8 +99,7 @@ int32 OS_GenericRead_Impl (uint32 local_id, void *buffer, uint32 nbytes, int32 t
 
     Returns: Number of bytes written (non-negative) on success, or relevant error code (negative)
  ------------------------------------------------------------------*/
-int32 OS_GenericWrite_Impl(uint32 local_id, const void *buffer, uint32 nbytes, int32 timeout);
-
+int32 OS_GenericWrite_Impl(const OS_object_token_t *token, const void *buffer, size_t nbytes, int32 timeout);
 
 /*----------------------------------------------------------------
    Function: OS_GenericClose_Impl
@@ -114,7 +109,7 @@ int32 OS_GenericWrite_Impl(uint32 local_id, const void *buffer, uint32 nbytes, i
 
     Returns: OS_SUCCESS on success, or relevant error code
  ------------------------------------------------------------------*/
-int32 OS_GenericClose_Impl(uint32 local_id);
+int32 OS_GenericClose_Impl(const OS_object_token_t *token);
 
 /*----------------------------------------------------------------
    Function: OS_FileOpen_Impl
@@ -124,7 +119,7 @@ int32 OS_GenericClose_Impl(uint32 local_id);
 
     Returns: OS_SUCCESS on success, or relevant error code
  ------------------------------------------------------------------*/
-int32 OS_FileOpen_Impl(uint32 local_id, const char *local_path, int32 flags, int32 access);
+int32 OS_FileOpen_Impl(const OS_object_token_t *token, const char *local_path, int32 flags, int32 access);
 
 /*----------------------------------------------------------------
    Function: OS_ShellOutputToFile_Impl
@@ -133,14 +128,11 @@ int32 OS_FileOpen_Impl(uint32 local_id, const char *local_path, int32 flags, int
 
     Returns: OS_SUCCESS on success, or relevant error code
  ------------------------------------------------------------------*/
-int32 OS_ShellOutputToFile_Impl(uint32 stream_id, const char* Cmd);
-
-
+int32 OS_ShellOutputToFile_Impl(const OS_object_token_t *token, const char *Cmd);
 
 /****************************************************************************************
                              Filename-based Operations
   ***************************************************************************************/
-
 
 /*
  * These FileXXX_Impl calls are usable for things that operate on pathnames,
@@ -191,5 +183,12 @@ int32 OS_FileRename_Impl(const char *old_path, const char *new_path);
  ------------------------------------------------------------------*/
 int32 OS_FileChmod_Impl(const char *local_path, uint32 access);
 
-#endif  /* INCLUDE_OS_SHARED_FILE_H_ */
+/*
+ * Internal helper function
+ *
+ * Not called outside this unit, but need to be prototyped
+ * here for coverage test.
+ */
+int32 OS_FileIteratorClose(osal_id_t filedes, void *arg);
 
+#endif /* OS_SHARED_FILE_H  */

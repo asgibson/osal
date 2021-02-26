@@ -32,8 +32,8 @@
  * can be executed.
  */
 
+#include "osapi-printf.h" /* OSAL public API for this subsystem */
 #include "utstub-helpers.h"
-
 
 int32 OS_ConsoleAPI_Init(void)
 {
@@ -61,10 +61,18 @@ void OS_printf(const char *string, ...)
     UT_Stub_RegisterContext(UT_KEY(OS_printf), string);
 
     int32   status;
-    int32   length = strlen(string);
+    size_t  length = strlen(string);
     va_list va;
+    char    str[128];
 
-    va_start(va,string);
+    /* Output the message when in debug mode */
+    va_start(va, string);
+    vsnprintf(str, sizeof(str), string, va);
+    UtDebug("OS_printf: %s", str);
+    va_end(va);
+
+    /* Reset va list for next use */
+    va_start(va, string);
 
     status = UT_DefaultStubImplWithArgs(__func__, UT_KEY(OS_printf), 0, va);
 
@@ -75,10 +83,9 @@ void OS_printf(const char *string, ...)
          * This is merely a way to avoid having to do full-blown printf processing
          * inside the UT stub (which would make it the full version, not a stub)
          */
-        if (strcmp(string, "%s") == 0 ||
-                strcmp(string, "%s\n") == 0)
+        if (strcmp(string, "%s") == 0 || strcmp(string, "%s\n") == 0)
         {
-            string = va_arg(va,const char *);
+            string = va_arg(va, const char *);
         }
         length = strlen(string);
         if (length > 0)
@@ -89,7 +96,7 @@ void OS_printf(const char *string, ...)
              *
              * (this is to ensure a consistent separator in the output buffer)
              */
-            while (length > 0 && string[length-1] == '\n')
+            while (length > 0 && string[length - 1] == '\n')
             {
                 --length;
             }
@@ -120,4 +127,3 @@ void OS_printf_enable(void)
 {
     UT_DEFAULT_IMPL(OS_printf_enable);
 }
-

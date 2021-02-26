@@ -37,8 +37,9 @@
 
 #include "os-rtems.h"
 #include "os-shared-common.h"
+#include "os-shared-idmap.h"
 
-RTEMS_GlobalVars_t RTEMS_GlobalVars = { 0 };
+RTEMS_GlobalVars_t RTEMS_GlobalVars = {0};
 
 /****************************************************************************************
                                 INITIALIZATION FUNCTION
@@ -52,55 +53,54 @@ RTEMS_GlobalVars_t RTEMS_GlobalVars = { 0 };
 
    returns: OS_SUCCESS or OS_ERROR
 ---------------------------------------------------------------------------------------*/
-int32 OS_API_Impl_Init(uint32 idtype)
+int32 OS_API_Impl_Init(osal_objtype_t idtype)
 {
-   int32               return_code;
+    int32 return_code;
 
-   return_code = OS_Rtems_TableMutex_Init(idtype);
-   if (return_code != OS_SUCCESS)
-   {
-       return return_code;
-   }
+    return_code = OS_Rtems_TableMutex_Init(idtype);
+    if (return_code != OS_SUCCESS)
+    {
+        return return_code;
+    }
 
-   switch(idtype)
-   {
-   case OS_OBJECT_TYPE_OS_TASK:
-       return_code = OS_Rtems_TaskAPI_Impl_Init();
-       break;
-   case OS_OBJECT_TYPE_OS_QUEUE:
-       return_code = OS_Rtems_QueueAPI_Impl_Init();
-       break;
-   case OS_OBJECT_TYPE_OS_BINSEM:
-       return_code = OS_Rtems_BinSemAPI_Impl_Init();
-       break;
-   case OS_OBJECT_TYPE_OS_COUNTSEM:
-       return_code = OS_Rtems_CountSemAPI_Impl_Init();
-       break;
-   case OS_OBJECT_TYPE_OS_MUTEX:
-       return_code = OS_Rtems_MutexAPI_Impl_Init();
-       break;
-   case OS_OBJECT_TYPE_OS_MODULE:
-       return_code = OS_Rtems_ModuleAPI_Impl_Init();
-       break;
-   case OS_OBJECT_TYPE_OS_TIMEBASE:
-       return_code = OS_Rtems_TimeBaseAPI_Impl_Init();
-       break;
-   case OS_OBJECT_TYPE_OS_STREAM:
-       return_code = OS_Rtems_StreamAPI_Impl_Init();
-       break;
-   case OS_OBJECT_TYPE_OS_DIR:
-       return_code = OS_Rtems_DirAPI_Impl_Init();
-       break;
-   case OS_OBJECT_TYPE_OS_FILESYS:
-       return_code = OS_Rtems_FileSysAPI_Impl_Init();
-       break;
-   default:
-       break;
-   }
+    switch (idtype)
+    {
+        case OS_OBJECT_TYPE_OS_TASK:
+            return_code = OS_Rtems_TaskAPI_Impl_Init();
+            break;
+        case OS_OBJECT_TYPE_OS_QUEUE:
+            return_code = OS_Rtems_QueueAPI_Impl_Init();
+            break;
+        case OS_OBJECT_TYPE_OS_BINSEM:
+            return_code = OS_Rtems_BinSemAPI_Impl_Init();
+            break;
+        case OS_OBJECT_TYPE_OS_COUNTSEM:
+            return_code = OS_Rtems_CountSemAPI_Impl_Init();
+            break;
+        case OS_OBJECT_TYPE_OS_MUTEX:
+            return_code = OS_Rtems_MutexAPI_Impl_Init();
+            break;
+        case OS_OBJECT_TYPE_OS_MODULE:
+            return_code = OS_Rtems_ModuleAPI_Impl_Init();
+            break;
+        case OS_OBJECT_TYPE_OS_TIMEBASE:
+            return_code = OS_Rtems_TimeBaseAPI_Impl_Init();
+            break;
+        case OS_OBJECT_TYPE_OS_STREAM:
+            return_code = OS_Rtems_StreamAPI_Impl_Init();
+            break;
+        case OS_OBJECT_TYPE_OS_DIR:
+            return_code = OS_Rtems_DirAPI_Impl_Init();
+            break;
+        case OS_OBJECT_TYPE_OS_FILESYS:
+            return_code = OS_Rtems_FileSysAPI_Impl_Init();
+            break;
+        default:
+            break;
+    }
 
-   return(return_code);
+    return (return_code);
 } /* end OS_API_Impl_Init */
-
 
 /*----------------------------------------------------------------
  *
@@ -116,7 +116,6 @@ void OS_IdleLoop_Impl()
     rtems_task_suspend(RTEMS_SELF);
 } /* end OS_IdleLoop_Impl */
 
-
 /*----------------------------------------------------------------
  *
  * Function: OS_ApplicationShutdown_Impl
@@ -127,11 +126,9 @@ void OS_IdleLoop_Impl()
  *-----------------------------------------------------------------*/
 void OS_ApplicationShutdown_Impl()
 {
-   /* Note that setting the IdleTaskId and suspending
-    * the idle task is not an atomic operation, so there
-    * is a remote chance that this could attempt to
-    * resume a task that is not yet suspended. */
-   rtems_task_resume(RTEMS_GlobalVars.IdleTaskId);
+    /* Note that setting the IdleTaskId and suspending
+     * the idle task is not an atomic operation, so there
+     * is a remote chance that this could attempt to
+     * resume a task that is not yet suspended. */
+    rtems_task_resume(RTEMS_GlobalVars.IdleTaskId);
 } /* end OS_ApplicationShutdown_Impl */
-
-

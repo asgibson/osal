@@ -25,10 +25,10 @@
  *
  */
 
-#ifndef INCLUDE_OS_IMPL_MUTEX_H_
-#define INCLUDE_OS_IMPL_MUTEX_H_
+#ifndef OS_IMPL_MUTEX_H
+#define OS_IMPL_MUTEX_H
 
-#include <osconfig.h>
+#include "osconfig.h"
 #include <pthread.h>
 
 /* Mutexes */
@@ -38,8 +38,6 @@ typedef struct
 } OS_impl_mutex_internal_record_t;
 
 /* Tables where the OS object information is stored */
-extern OS_impl_mutex_internal_record_t   OS_impl_mutex_table       [OS_MAX_MUTEXES];
+extern OS_impl_mutex_internal_record_t OS_impl_mutex_table[OS_MAX_MUTEXES];
 
-
-#endif  /* INCLUDE_OS_IMPL_MUTEX_H_ */
-
+#endif /* OS_IMPL_MUTEX_H  */

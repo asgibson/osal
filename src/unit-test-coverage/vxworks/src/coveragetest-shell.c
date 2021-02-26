@@ -37,8 +37,9 @@ void Test_OS_ShellOutputToFile_Impl(void)
      * Test Case For:
      * int32 OS_ShellOutputToFile_Impl(uint32 file_id, const char *Cmd)
      */
-    int32 expected = OS_SUCCESS;
-    int32 actual;
+    int32             expected = OS_SUCCESS;
+    int32             actual;
+    OS_object_token_t token = UT_TOKEN_0;
 
     /*
      * The ShellOutputToFile will loop until the
@@ -47,20 +48,19 @@ void Test_OS_ShellOutputToFile_Impl(void)
      */
     UT_SetDeferredRetcode(UT_KEY(OCS_taskNameToId), 2, -1);
 
-    actual = OS_ShellOutputToFile_Impl(0, "TestCmd");
+    actual = OS_ShellOutputToFile_Impl(&token, "TestCmd");
 
     UtAssert_True(actual == expected, "OS_ShellOutputToFile_Impl() (%ld) == OS_SUCCESS", (long)actual);
     UtAssert_True(UT_GetStubCount(UT_KEY(OCS_shellGenericInit)) == 1, "shellGenericInit() called");
 
     /* failure to open the output file */
-    UT_SetForceFail(UT_KEY(OS_OpenCreate), OS_ERROR);
+    UT_SetDefaultReturnValue(UT_KEY(OS_OpenCreate), OS_ERROR);
     expected = OS_ERROR;
-    actual = OS_ShellOutputToFile_Impl(0, "TestCmd");
+    actual   = OS_ShellOutputToFile_Impl(&token, "TestCmd");
     UtAssert_True(actual == expected, "OS_ShellOutputToFile_Impl() (%ld) == OS_ERROR", (long)actual);
 }
 
 /* ------------------- End of test cases --------------------------------------*/
-
 
 /* Osapi_Test_Setup
  *
@@ -79,10 +79,7 @@ void Osapi_Test_Setup(void)
  * Purpose:
  *   Called by the unit test tool to tear down the app after each test
  */
-void Osapi_Test_Teardown(void)
-{
-
-}
+void Osapi_Test_Teardown(void) {}
 
 /* UtTest_Setup
  *
@@ -93,4 +90,3 @@ void UtTest_Setup(void)
 {
     ADD_TEST(OS_ShellOutputToFile_Impl);
 }
-

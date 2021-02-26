@@ -46,10 +46,12 @@ void Test_OS_CountSemCreate_Impl(void)
      * Test Case For:
      * int32 OS_CountSemCreate_Impl (uint32 sem_id, uint32 sem_initial_value, uint32 options)
      */
-    OSAPI_TEST_FUNCTION_RC(OS_CountSemCreate_Impl(0,0,0), OS_SUCCESS);
+    OS_object_token_t token = UT_TOKEN_0;
 
-    UT_SetForceFail(UT_KEY(OCS_semCInitialize), OCS_ERROR);
-    OSAPI_TEST_FUNCTION_RC(OS_CountSemCreate_Impl(0,0,0), OS_SEM_FAILURE);
+    OSAPI_TEST_FUNCTION_RC(OS_CountSemCreate_Impl(&token, 0, 0), OS_SUCCESS);
+
+    UT_SetDefaultReturnValue(UT_KEY(OCS_semCInitialize), OCS_ERROR);
+    OSAPI_TEST_FUNCTION_RC(OS_CountSemCreate_Impl(&token, 0, 0), OS_SEM_FAILURE);
 }
 
 void Test_OS_CountSemDelete_Impl(void)
@@ -58,7 +60,9 @@ void Test_OS_CountSemDelete_Impl(void)
      * Test Case For:
      * int32 OS_CountSemDelete_Impl (uint32 sem_id)
      */
-    OSAPI_TEST_FUNCTION_RC(OS_CountSemDelete_Impl(0), OS_SUCCESS);
+    OS_object_token_t token = UT_TOKEN_0;
+
+    OSAPI_TEST_FUNCTION_RC(OS_CountSemDelete_Impl(&token), OS_SUCCESS);
 }
 
 void Test_OS_CountSemGive_Impl(void)
@@ -67,7 +71,9 @@ void Test_OS_CountSemGive_Impl(void)
      * Test Case For:
      * int32 OS_CountSemGive_Impl ( uint32 sem_id )
      */
-    OSAPI_TEST_FUNCTION_RC(OS_CountSemGive_Impl(0), OS_SUCCESS);
+    OS_object_token_t token = UT_TOKEN_0;
+
+    OSAPI_TEST_FUNCTION_RC(OS_CountSemGive_Impl(&token), OS_SUCCESS);
 }
 
 void Test_OS_CountSemTake_Impl(void)
@@ -76,7 +82,9 @@ void Test_OS_CountSemTake_Impl(void)
      * Test Case For:
      * int32 OS_CountSemTake_Impl ( uint32 sem_id )
      */
-    OSAPI_TEST_FUNCTION_RC(OS_CountSemTake_Impl(0), OS_SUCCESS);
+    OS_object_token_t token = UT_TOKEN_0;
+
+    OSAPI_TEST_FUNCTION_RC(OS_CountSemTake_Impl(&token), OS_SUCCESS);
 }
 
 void Test_OS_CountSemTimedWait_Impl(void)
@@ -85,10 +93,12 @@ void Test_OS_CountSemTimedWait_Impl(void)
      * Test Case For:
      * int32 OS_CountSemTimedWait_Impl ( uint32 sem_id, uint32 msecs )
      */
-    OSAPI_TEST_FUNCTION_RC(OS_CountSemTimedWait_Impl(0, 100), OS_SUCCESS);
+    OS_object_token_t token = UT_TOKEN_0;
 
-    UT_SetForceFail(UT_KEY(OS_Milli2Ticks), OS_ERROR);
-    OSAPI_TEST_FUNCTION_RC(OS_CountSemTimedWait_Impl(0,100), OS_ERROR);
+    OSAPI_TEST_FUNCTION_RC(OS_CountSemTimedWait_Impl(&token, 100), OS_SUCCESS);
+
+    UT_SetDefaultReturnValue(UT_KEY(OS_Milli2Ticks), OS_ERROR);
+    OSAPI_TEST_FUNCTION_RC(OS_CountSemTimedWait_Impl(&token, 100), OS_ERROR);
 }
 
 void Test_OS_CountSemGetInfo_Impl(void)
@@ -98,10 +108,11 @@ void Test_OS_CountSemGetInfo_Impl(void)
      * int32 OS_CountSemGetInfo_Impl (uint32 sem_id, OS_count_sem_prop_t *count_prop)
      */
     OS_count_sem_prop_t count_prop;
-    memset(&count_prop, 0xEE, sizeof(count_prop));
-    OSAPI_TEST_FUNCTION_RC(OS_CountSemGetInfo_Impl(0, &count_prop), OS_SUCCESS);
-}
+    OS_object_token_t   token = UT_TOKEN_0;
 
+    memset(&count_prop, 0xEE, sizeof(count_prop));
+    OSAPI_TEST_FUNCTION_RC(OS_CountSemGetInfo_Impl(&token, &count_prop), OS_SUCCESS);
+}
 
 /* ------------------- End of test cases --------------------------------------*/
 
@@ -126,10 +137,7 @@ void Osapi_Test_Setup(void)
  * Purpose:
  *   Called by the unit test tool to tear down the app after each test
  */
-void Osapi_Test_Teardown(void)
-{
-
-}
+void Osapi_Test_Teardown(void) {}
 
 /* UtTest_Setup
  *
@@ -146,5 +154,3 @@ void UtTest_Setup(void)
     ADD_TEST(OS_CountSemTimedWait_Impl);
     ADD_TEST(OS_CountSemGetInfo_Impl);
 }
-
-

@@ -19,8 +19,8 @@
  */
 
 /* OSAL coverage stub replacement for ramDrv.h */
-#ifndef _OSAL_OVERRIDE_RAMDRV_H_
-#define _OSAL_OVERRIDE_RAMDRV_H_
+#ifndef OSAL_OVERRIDE_RAMDRV_H
+#define OSAL_OVERRIDE_RAMDRV_H
 
 #include <OCS_ramDrv.h>
 #include <vxWorks.h>
@@ -30,7 +30,6 @@
 /* mappings for declarations in ramDrv.h */
 /* ----------------------------------------- */
 
-#define ramDevCreate     OCS_ramDevCreate
+#define ramDevCreate OCS_ramDevCreate
 
-
-#endif /* _OSAL_OVERRIDE_RAMDRV_H_ */
+#endif /* OSAL_OVERRIDE_RAMDRV_H */

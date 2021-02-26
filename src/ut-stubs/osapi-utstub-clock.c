@@ -32,8 +32,8 @@
  * can be executed.
  */
 
+#include "osapi-clock.h" /* OSAL public API for this subsystem */
 #include "utstub-helpers.h"
-
 
 /*****************************************************************************
  *
@@ -44,29 +44,28 @@ int32 OS_GetLocalTime(OS_time_t *time_struct)
 {
     UT_Stub_RegisterContext(UT_KEY(OS_GetLocalTime), time_struct);
 
-    int32 status;
+    int32  status;
     uint32 count;
 
     status = UT_DEFAULT_IMPL(OS_GetLocalTime);
 
     if (status == OS_SUCCESS &&
-            UT_Stub_CopyToLocal(UT_KEY(OS_GetLocalTime), time_struct, sizeof(*time_struct)) < sizeof(*time_struct))
+        UT_Stub_CopyToLocal(UT_KEY(OS_GetLocalTime), time_struct, sizeof(*time_struct)) < sizeof(*time_struct))
     {
-        count = UT_GetStubCount(UT_KEY(OS_GetLocalTime));
-        time_struct->microsecs = 10000 * (count % 100);
-        time_struct->seconds = 1 + (count / 100);
+        count        = UT_GetStubCount(UT_KEY(OS_GetLocalTime));
+        *time_struct = OS_TimeAssembleFromNanoseconds(1 + (count / 100), 10000000 * (count % 100));
     }
 
     return status;
 
-}/* end OS_GetLocalTime */
+} /* end OS_GetLocalTime */
 
 /*****************************************************************************
  *
  * Stub function for OS_SetLocalTime()
  *
  *****************************************************************************/
-int32 OS_SetLocalTime(OS_time_t *time_struct)
+int32 OS_SetLocalTime(const OS_time_t *time_struct)
 {
     UT_Stub_RegisterContext(UT_KEY(OS_SetLocalTime), time_struct);
 
@@ -77,4 +76,3 @@ int32 OS_SetLocalTime(OS_time_t *time_struct)
     return status;
 
 } /*end OS_SetLocalTime */
-

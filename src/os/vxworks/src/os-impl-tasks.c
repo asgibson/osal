@@ -49,21 +49,21 @@
  * If they are not defined, use a reasonable default/substitute.
  */
 #if defined(_STACK_ALIGN_SIZE)
-#define VX_IMPL_STACK_ALIGN_SIZE    _STACK_ALIGN_SIZE
+#define VX_IMPL_STACK_ALIGN_SIZE _STACK_ALIGN_SIZE
 #else
-#define VX_IMPL_STACK_ALIGN_SIZE    16
+#define VX_IMPL_STACK_ALIGN_SIZE ((size_t)16)
 #endif
 
 #if defined(STACK_ROUND_DOWN)
 #define VX_IMPL_STACK_ROUND_DOWN(x) STACK_ROUND_DOWN(x)
 #else
-#define VX_IMPL_STACK_ROUND_DOWN(x) ((x) & ~(VX_IMPL_STACK_ALIGN_SIZE-1))
+#define VX_IMPL_STACK_ROUND_DOWN(x) ((x) & ~(VX_IMPL_STACK_ALIGN_SIZE - 1))
 #endif
 
 #if defined(STACK_ROUND_UP)
-#define VX_IMPL_STACK_ROUND_UP(x)   STACK_ROUND_UP(x)
+#define VX_IMPL_STACK_ROUND_UP(x) STACK_ROUND_UP(x)
 #else
-#define VX_IMPL_STACK_ROUND_UP(x)   (((x) + (VX_IMPL_STACK_ALIGN_SIZE-1)) & ~(VX_IMPL_STACK_ALIGN_SIZE-1))
+#define VX_IMPL_STACK_ROUND_UP(x) (((x) + (VX_IMPL_STACK_ALIGN_SIZE - 1)) & ~(VX_IMPL_STACK_ALIGN_SIZE - 1))
 #endif
 
 /****************************************************************************************
@@ -71,7 +71,7 @@
 ****************************************************************************************/
 
 /* Tables where the OS object information is stored */
-OS_impl_task_internal_record_t  OS_impl_task_table      [OS_MAX_TASKS];
+OS_impl_task_internal_record_t OS_impl_task_table[OS_MAX_TASKS];
 
 /*---------------------------------------------------------------------------------------
    Name: OS_VxWorksEntry
@@ -83,21 +83,14 @@ OS_impl_task_internal_record_t  OS_impl_task_table      [OS_MAX_TASKS];
 ---------------------------------------------------------------------------------------*/
 int OS_VxWorks_TaskEntry(int arg)
 {
-    VxWorks_ID_Buffer_t id;
-
-    id.arg = arg;
-
-    OS_TaskEntryPoint(id.id);
+    OS_TaskEntryPoint(OS_ObjectIdFromInteger(arg));
 
     return 0;
 } /* end OS_VxWorksEntry */
 
-
-
 /****************************************************************************************
                                     TASK API
 ****************************************************************************************/
-
 
 /*----------------------------------------------------------------
  *
@@ -112,7 +105,6 @@ int32 OS_VxWorks_TaskAPI_Impl_Init(void)
     return (OS_SUCCESS);
 } /* end OS_VxWorks_TaskAPI_Impl_Init */
 
-
 /*----------------------------------------------------------------
  *
  * Function: OS_TaskCreate_Impl
@@ -121,18 +113,19 @@ int32 OS_VxWorks_TaskAPI_Impl_Init(void)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_TaskCreate_Impl (uint32 task_id, uint32 flags)
+int32 OS_TaskCreate_Impl(const OS_object_token_t *token, uint32 flags)
 {
-    STATUS status;
-    int vxflags;
-    int vxpri;
-    long actualsz;
-    long userstackbase;
-    long actualstackbase;
+    STATUS                          status;
+    int                             vxflags;
+    int                             vxpri;
+    size_t                          actualsz;
+    unsigned long                   userstackbase;
+    unsigned long                   actualstackbase;
     OS_impl_task_internal_record_t *lrec;
-    VxWorks_ID_Buffer_t id;
+    OS_task_internal_record_t *     task;
 
-    lrec = &OS_impl_task_table[task_id];
+    lrec = OS_OBJECT_TABLE_GET(OS_impl_task_table, *token);
+    task = OS_OBJECT_TABLE_GET(OS_task_table, *token);
 
     /* Create VxWorks Task */
 
@@ -145,14 +138,13 @@ int32 OS_TaskCreate_Impl (uint32 task_id, uint32 flags)
         vxflags |= VX_FP_TASK;
     }
 
-
     /*
      * Get priority/stack specs from main struct
      * priority should be a direct passthru
      */
-    vxpri = OS_task_table[task_id].priority;
-    actualsz = OS_task_table[task_id].stack_size;
-    userstackbase = (long)OS_task_table[task_id].stack_pointer;
+    vxpri         = task->priority;
+    actualsz      = task->stack_size;
+    userstackbase = (unsigned long)task->stack_pointer;
 
     /*
      * NOTE: Using taskInit() here rather than taskSpawn() allows us
@@ -216,10 +208,9 @@ int32 OS_TaskCreate_Impl (uint32 task_id, uint32 flags)
             {
                 lrec->heap_block_size = actualsz;
             }
-
         }
 
-        userstackbase = (long)lrec->heap_block;
+        userstackbase = (unsigned long)lrec->heap_block;
     }
 
     if (userstackbase == 0)
@@ -240,20 +231,17 @@ int32 OS_TaskCreate_Impl (uint32 task_id, uint32 flags)
      * the case in the event that _STACK_DIR is not defined/known
      */
 #if !defined(_STACK_DIR) || (_STACK_DIR != _STACK_GROWS_UP)
-    actualstackbase  += actualsz;         /* move to last byte of stack block */
+    actualstackbase += actualsz; /* move to last byte of stack block */
 #endif
 
-    id.id = OS_global_task_table[task_id].active_id;
-    status = taskInit(
-            &lrec->tcb,                 /* address of new task's TCB */
-            (char*)OS_global_task_table[task_id].name_entry,
-            vxpri,                      /* priority of new task */
-            vxflags,                    /* task option word */
-            (char *)actualstackbase,    /* base of new task's stack */
-            actualsz,                   /* size (bytes) of stack needed */
-            (FUNCPTR)OS_VxWorks_TaskEntry,           /* entry point of new task */
-            id.arg,                     /* 1st arg is ID */
-            0,0,0,0,0,0,0,0,0);
+    status = taskInit((WIND_TCB *)&lrec->tcb,                            /* address of new task's TCB */
+                      (char *)task->task_name, vxpri,                    /* priority of new task */
+                      vxflags,                                           /* task option word */
+                      (char *)actualstackbase,                           /* base of new task's stack */
+                      actualsz,                                          /* size (bytes) of stack needed */
+                      (FUNCPTR)OS_VxWorks_TaskEntry,                     /* entry point of new task */
+                      OS_ObjectIdToInteger(OS_ObjectIdFromToken(token)), /* 1st arg is ID */
+                      0, 0, 0, 0, 0, 0, 0, 0, 0);
 
     if (status != OK)
     {
@@ -268,7 +256,6 @@ int32 OS_TaskCreate_Impl (uint32 task_id, uint32 flags)
 
 } /* end OS_TaskCreate_Impl */
 
-
 /*----------------------------------------------------------------
  *
  * Function: OS_TaskDelete_Impl
@@ -277,25 +264,42 @@ int32 OS_TaskCreate_Impl (uint32 task_id, uint32 flags)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_TaskDelete_Impl (uint32 task_id)
+int32 OS_TaskDelete_Impl(const OS_object_token_t *token)
 {
+    OS_impl_task_internal_record_t *impl;
+
+    impl = OS_OBJECT_TABLE_GET(OS_impl_task_table, *token);
+
     /*
     ** Try to delete the task
     ** If this fails, not much recourse - the only potential cause of failure
     ** to cancel here is that the thread ID is invalid because it already exited itself,
     ** and if that is true there is nothing wrong - everything is OK to continue normally.
     */
-    if (taskDelete(OS_impl_task_table[task_id].vxid) != OK)
+    if (taskDelete(impl->vxid) != OK)
     {
-        OS_DEBUG("taskDelete() - vxWorks errno %d\n",errno);
+        OS_DEBUG("taskDelete() - vxWorks errno %d\n", errno);
         return OS_ERROR;
     }
 
-    OS_impl_task_table[task_id].vxid = 0;
+    impl->vxid = 0;
     return OS_SUCCESS;
 
 } /* end OS_TaskDelete_Impl */
 
+/*----------------------------------------------------------------
+ *
+ * Function: OS_TaskDetach_Impl
+ *
+ *  Purpose: Implemented per internal OSAL API
+ *           See prototype for argument/return detail
+ *
+ *-----------------------------------------------------------------*/
+int32 OS_TaskDetach_Impl(const OS_object_token_t *token)
+{
+    /* No-op on VxWorks */
+    return OS_SUCCESS;
+}
 
 /*----------------------------------------------------------------
  *
@@ -310,7 +314,6 @@ void OS_TaskExit_Impl()
     taskExit(0);
 } /* end OS_TaskExit_Impl */
 
-
 /*----------------------------------------------------------------
  *
  * Function: OS_TaskDelay_Impl
@@ -319,7 +322,7 @@ void OS_TaskExit_Impl()
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_TaskDelay_Impl (uint32 milli_second)
+int32 OS_TaskDelay_Impl(uint32 milli_second)
 {
     /* msecs rounded to the closest system tick count */
     int sys_ticks;
@@ -331,14 +334,13 @@ int32 OS_TaskDelay_Impl (uint32 milli_second)
     }
 
     /* if successful, the execution of task will pend here until delay finishes */
-    if(taskDelay(sys_ticks) != OK)
+    if (taskDelay(sys_ticks) != OK)
     {
         return OS_ERROR;
     }
     return OS_SUCCESS;
 
 } /* end OS_TaskDelay_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -348,10 +350,14 @@ int32 OS_TaskDelay_Impl (uint32 milli_second)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_TaskSetPriority_Impl (uint32 task_id, uint32 new_priority)
+int32 OS_TaskSetPriority_Impl(const OS_object_token_t *token, osal_priority_t new_priority)
 {
+    OS_impl_task_internal_record_t *impl;
+
+    impl = OS_OBJECT_TABLE_GET(OS_impl_task_table, *token);
+
     /* Set VxWorks Task Priority */
-    if(taskPrioritySet(OS_impl_task_table[task_id].vxid, new_priority) != OK)
+    if (taskPrioritySet(impl->vxid, new_priority) != OK)
     {
         return OS_ERROR;
     }
@@ -359,7 +365,6 @@ int32 OS_TaskSetPriority_Impl (uint32 task_id, uint32 new_priority)
     return OS_SUCCESS;
 
 } /* end OS_TaskSetPriority_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -369,20 +374,22 @@ int32 OS_TaskSetPriority_Impl (uint32 task_id, uint32 new_priority)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_TaskMatch_Impl(uint32 task_id)
+int32 OS_TaskMatch_Impl(const OS_object_token_t *token)
 {
+    OS_impl_task_internal_record_t *impl;
+
+    impl = OS_OBJECT_TABLE_GET(OS_impl_task_table, *token);
+
     /*
     ** Get VxWorks Task Id
     */
-    if ( taskIdSelf() != OS_impl_task_table[task_id].vxid )
+    if (taskIdSelf() != impl->vxid)
     {
-       return(OS_ERROR);
+        return (OS_ERROR);
     }
 
-
-   return OS_SUCCESS;
+    return OS_SUCCESS;
 } /* end OS_TaskMatch_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -392,11 +399,10 @@ int32 OS_TaskMatch_Impl(uint32 task_id)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_TaskRegister_Impl (osal_id_t global_task_id)
+int32 OS_TaskRegister_Impl(osal_id_t global_task_id)
 {
     return OS_SUCCESS;
 } /* end OS_TaskRegister_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -406,28 +412,27 @@ int32 OS_TaskRegister_Impl (osal_id_t global_task_id)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-osal_id_t OS_TaskGetId_Impl (void)
+osal_id_t OS_TaskGetId_Impl(void)
 {
-    OS_impl_task_internal_record_t *lrec;
-    size_t index;
+    void *    lrec;
+    size_t    idx;
     osal_id_t id;
 
-    id = OS_OBJECT_ID_UNDEFINED;
-    lrec = (OS_impl_task_internal_record_t *)taskTcb(taskIdSelf());
+    id   = OS_OBJECT_ID_UNDEFINED;
+    lrec = taskTcb(taskIdSelf());
 
     if (lrec != NULL)
     {
-        index = lrec - &OS_impl_task_table[0];
-        if (index < OS_MAX_TASKS)
+        idx = (OS_impl_task_internal_record_t *)lrec - &OS_impl_task_table[0];
+        if (idx < OS_MAX_TASKS)
         {
-            id = OS_global_task_table[index].active_id;
+            id = OS_global_task_table[idx].active_id;
         }
     }
 
     return id;
 
 } /* end OS_TaskGetId_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -437,7 +442,7 @@ osal_id_t OS_TaskGetId_Impl (void)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_TaskGetInfo_Impl (uint32 task_id, OS_task_prop_t *task_prop)
+int32 OS_TaskGetInfo_Impl(const OS_object_token_t *token, OS_task_prop_t *task_prop)
 {
     return OS_SUCCESS;
 
@@ -451,7 +456,7 @@ int32 OS_TaskGetInfo_Impl (uint32 task_id, OS_task_prop_t *task_prop)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_TaskValidateSystemData_Impl(const void *sysdata, uint32 sysdata_size)
+int32 OS_TaskValidateSystemData_Impl(const void *sysdata, size_t sysdata_size)
 {
     if (sysdata == NULL || sysdata_size != sizeof(TASK_ID))
     {
@@ -468,12 +473,12 @@ int32 OS_TaskValidateSystemData_Impl(const void *sysdata, uint32 sysdata_size)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-bool OS_TaskIdMatchSystemData_Impl(void *ref, uint32 local_id, const OS_common_record_t *obj)
+bool OS_TaskIdMatchSystemData_Impl(void *ref, const OS_object_token_t *token, const OS_common_record_t *obj)
 {
-    const TASK_ID *target = (const TASK_ID *)ref;
+    const TASK_ID *                 target = (const TASK_ID *)ref;
+    OS_impl_task_internal_record_t *impl;
 
-    return (*target == OS_impl_task_table[local_id].vxid);
+    impl = OS_OBJECT_TABLE_GET(OS_impl_task_table, *token);
+
+    return (*target == impl->vxid);
 }
-
-
-

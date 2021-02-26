@@ -25,15 +25,14 @@
  *
  */
 
-#ifndef INCLUDE_OS_IMPL_FILES_H_
-#define INCLUDE_OS_IMPL_FILES_H_
+#ifndef OS_IMPL_FILES_H
+#define OS_IMPL_FILES_H
 
 #include "os-impl-io.h"
 
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
 
 /*
  * These two constants (EUID and EGID) are local cache of the
@@ -47,8 +46,6 @@
 extern uid_t OS_IMPL_SELF_EUID;
 extern gid_t OS_IMPL_SELF_EGID;
 
-
 extern const int OS_IMPL_REGULAR_FILE_FLAGS;
 
-#endif  /* INCLUDE_OS_IMPL_FILES_H_ */
-
+#endif /* OS_IMPL_FILES_H  */

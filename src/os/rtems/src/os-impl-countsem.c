@@ -46,7 +46,7 @@
                                      DEFINES
  ***************************************************************************************/
 
-#define MAX_SEM_VALUE               0x7FFFFFFF
+#define MAX_SEM_VALUE 0x7FFFFFFF
 
 /*
  * Define all of the RTEMS semaphore attributes
@@ -56,14 +56,12 @@
 
 #define OSAL_COUNT_SEM_ATTRIBS (RTEMS_PRIORITY)
 
-
 /****************************************************************************************
                                    GLOBAL DATA
  ***************************************************************************************/
 
 /*  tables for the properties of objects */
-OS_impl_countsem_internal_record_t    OS_impl_count_sem_table     [OS_MAX_COUNT_SEMAPHORES];
-
+OS_impl_countsem_internal_record_t OS_impl_count_sem_table[OS_MAX_COUNT_SEMAPHORES];
 
 /*----------------------------------------------------------------
  *
@@ -78,8 +76,6 @@ int32 OS_Rtems_CountSemAPI_Impl_Init(void)
     return (OS_SUCCESS);
 } /* end OS_Rtems_CountSemAPI_Impl_Init */
 
-
-
 /*----------------------------------------------------------------
  *
  * Function: OS_CountSemCreate_Impl
@@ -88,15 +84,18 @@ int32 OS_Rtems_CountSemAPI_Impl_Init(void)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_CountSemCreate_Impl (uint32 sem_id, uint32 sem_initial_value, uint32 options)
+int32 OS_CountSemCreate_Impl(const OS_object_token_t *token, uint32 sem_initial_value, uint32 options)
 {
-    rtems_status_code status;
-    rtems_name        r_name;
+    rtems_status_code                   status;
+    rtems_name                          r_name;
+    OS_impl_countsem_internal_record_t *impl;
+
+    impl = OS_OBJECT_TABLE_GET(OS_impl_count_sem_table, *token);
 
     /*
     ** Verify that the semaphore maximum value is not too high
     */
-    if ( sem_initial_value > MAX_SEM_VALUE )
+    if (sem_initial_value > MAX_SEM_VALUE)
     {
         return OS_INVALID_SEM_VALUE;
     }
@@ -106,23 +105,19 @@ int32 OS_CountSemCreate_Impl (uint32 sem_id, uint32 sem_initial_value, uint32 op
     ** It is convenient to use the OSAL ID in here, as we know it is already unique
     ** and trying to use the real name would be less than useful (only 4 chars)
     */
-    r_name = OS_ObjectIdToInteger(OS_global_count_sem_table[sem_id].active_id);
-    status = rtems_semaphore_create( r_name, sem_initial_value,
-                                     OSAL_COUNT_SEM_ATTRIBS,
-                                     0,
-                                     &(OS_impl_count_sem_table[sem_id].id));
+    r_name = OS_ObjectIdToInteger(OS_ObjectIdFromToken(token));
+    status = rtems_semaphore_create(r_name, sem_initial_value, OSAL_COUNT_SEM_ATTRIBS, 0, &(impl->id));
 
     /* check if Create failed */
-    if ( status != RTEMS_SUCCESSFUL )
+    if (status != RTEMS_SUCCESSFUL)
     {
-        OS_DEBUG("Unhandled semaphore_create error: %s\n",rtems_status_text(status));
+        OS_DEBUG("Unhandled semaphore_create error: %s\n", rtems_status_text(status));
         return OS_SEM_FAILURE;
     }
 
     return OS_SUCCESS;
 
 } /* end OS_CountSemCreate_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -132,21 +127,23 @@ int32 OS_CountSemCreate_Impl (uint32 sem_id, uint32 sem_initial_value, uint32 op
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_CountSemDelete_Impl (uint32 sem_id)
+int32 OS_CountSemDelete_Impl(const OS_object_token_t *token)
 {
-    rtems_status_code status;
+    rtems_status_code                   status;
+    OS_impl_countsem_internal_record_t *impl;
 
-    status = rtems_semaphore_delete( OS_impl_count_sem_table[sem_id].id);
+    impl = OS_OBJECT_TABLE_GET(OS_impl_count_sem_table, *token);
+
+    status = rtems_semaphore_delete(impl->id);
     if (status != RTEMS_SUCCESSFUL)
     {
-        OS_DEBUG("Unhandled semaphore_delete error: %s\n",rtems_status_text(status));
+        OS_DEBUG("Unhandled semaphore_delete error: %s\n", rtems_status_text(status));
         return OS_SEM_FAILURE;
     }
 
     return OS_SUCCESS;
 
 } /* end OS_CountSemDelete_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -156,21 +153,23 @@ int32 OS_CountSemDelete_Impl (uint32 sem_id)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_CountSemGive_Impl (uint32 sem_id)
+int32 OS_CountSemGive_Impl(const OS_object_token_t *token)
 {
-    rtems_status_code status;
+    rtems_status_code                   status;
+    OS_impl_countsem_internal_record_t *impl;
 
-    status = rtems_semaphore_release(OS_impl_count_sem_table[sem_id].id);
-    if(status != RTEMS_SUCCESSFUL)
+    impl = OS_OBJECT_TABLE_GET(OS_impl_count_sem_table, *token);
+
+    status = rtems_semaphore_release(impl->id);
+    if (status != RTEMS_SUCCESSFUL)
     {
-        OS_DEBUG("Unhandled semaphore_release error: %s\n",rtems_status_text(status));
+        OS_DEBUG("Unhandled semaphore_release error: %s\n", rtems_status_text(status));
         return OS_SEM_FAILURE;
     }
 
-    return(OS_SUCCESS);
+    return (OS_SUCCESS);
 
 } /* end OS_CountSemGive_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -180,22 +179,23 @@ int32 OS_CountSemGive_Impl (uint32 sem_id)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_CountSemTake_Impl (uint32 sem_id)
+int32 OS_CountSemTake_Impl(const OS_object_token_t *token)
 {
-    rtems_status_code status;
+    rtems_status_code                   status;
+    OS_impl_countsem_internal_record_t *impl;
 
-    status = rtems_semaphore_obtain(OS_impl_count_sem_table[sem_id].id, RTEMS_WAIT, RTEMS_NO_TIMEOUT);
+    impl = OS_OBJECT_TABLE_GET(OS_impl_count_sem_table, *token);
+
+    status = rtems_semaphore_obtain(impl->id, RTEMS_WAIT, RTEMS_NO_TIMEOUT);
     if (status != RTEMS_SUCCESSFUL)
     {
-        OS_DEBUG("Unhandled semaphore_obtain error: %s\n",rtems_status_text(status));
+        OS_DEBUG("Unhandled semaphore_obtain error: %s\n", rtems_status_text(status));
         return OS_SEM_FAILURE;
     }
 
     return OS_SUCCESS;
 
 } /* end OS_CountSemTake_Impl */
-
-
 
 /*----------------------------------------------------------------
  *
@@ -205,17 +205,20 @@ int32 OS_CountSemTake_Impl (uint32 sem_id)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_CountSemTimedWait_Impl (uint32 sem_id, uint32 msecs)
+int32 OS_CountSemTimedWait_Impl(const OS_object_token_t *token, uint32 msecs)
 {
-    rtems_status_code status;
-    int               TimeInTicks;
+    rtems_status_code                   status;
+    int                                 TimeInTicks;
+    OS_impl_countsem_internal_record_t *impl;
+
+    impl = OS_OBJECT_TABLE_GET(OS_impl_count_sem_table, *token);
 
     if (OS_Milli2Ticks(msecs, &TimeInTicks) != OS_SUCCESS)
     {
         return OS_ERROR;
     }
 
-    status = rtems_semaphore_obtain(OS_impl_count_sem_table[sem_id].id, RTEMS_WAIT, TimeInTicks);
+    status = rtems_semaphore_obtain(impl->id, RTEMS_WAIT, TimeInTicks);
     if (status == RTEMS_TIMEOUT)
     {
         return OS_SEM_TIMEOUT;
@@ -223,14 +226,13 @@ int32 OS_CountSemTimedWait_Impl (uint32 sem_id, uint32 msecs)
 
     if (status != RTEMS_SUCCESSFUL)
     {
-        OS_DEBUG("Unhandled semaphore_obtain error: %s\n",rtems_status_text(status));
+        OS_DEBUG("Unhandled semaphore_obtain error: %s\n", rtems_status_text(status));
         return OS_SEM_FAILURE;
     }
 
     return OS_SUCCESS;
 
 } /* end OS_CountSemTimedWait_Impl */
-
 
 /*----------------------------------------------------------------
  *
@@ -240,10 +242,9 @@ int32 OS_CountSemTimedWait_Impl (uint32 sem_id, uint32 msecs)
  *           See prototype for argument/return detail
  *
  *-----------------------------------------------------------------*/
-int32 OS_CountSemGetInfo_Impl (uint32 sem_id, OS_count_sem_prop_t *count_prop)
+int32 OS_CountSemGetInfo_Impl(const OS_object_token_t *token, OS_count_sem_prop_t *count_prop)
 {
     /* RTEMS does not provide an API to get the value */
     return OS_SUCCESS;
 
 } /* end OS_CountSemGetInfo_Impl */
-

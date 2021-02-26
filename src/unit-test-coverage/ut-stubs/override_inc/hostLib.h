@@ -26,17 +26,15 @@
  * OSAL coverage stub replacement for hostLib.h
  */
 
-#ifndef INCLUDE_HOSTLIB_H_
-#define INCLUDE_HOSTLIB_H_
+#ifndef HOSTLIB_H
+#define HOSTLIB_H
 
 #include <OCS_hostLib.h>
 #include <vxWorks.h>
 
-
 /* ----------------------------------------- */
 /* mappings for declarations in hostLib.h */
 /* ----------------------------------------- */
-#define hostGetByName       OCS_hostGetByName
+#define hostGetByName OCS_hostGetByName
 
-#endif  /* INCLUDE_HOSTLIB_H_ */
-
+#endif /* HOSTLIB_H  */

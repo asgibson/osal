@@ -23,14 +23,14 @@
  *
  * Purpose: This file contains functions to implement a standard way to execute unit tests.
  *
- * Design Notes: 
+ * Design Notes:
  *    By default the only output that is printed to the console is assert failures
- *    and a summary of the test results after all tests have executed.  To enable additional 
+ *    and a summary of the test results after all tests have executed.  To enable additional
  *    test output define the macro UT_VERBOSE.
  */
 
-#ifndef _uttest_
-#define	_uttest_
+#ifndef UTTEST_H
+#define UTTEST_H
 
 #include <stdbool.h>
 
@@ -43,12 +43,17 @@
  *
  * Called by the user to register a new test case with the library.
  *
+ * Note: Nested addition of tests is not supported.  Calling
+ *       UtTest_Add from within a test function added using UtTest_Add
+ *       will not cause the nested test to execute, and will be
+ *       silently ignored.
+ *
  * \param Test     Main test function to call.
  * \param Setup    Setup function, called before the test function
  * \param Teardown Cleanup function, called after the test function
  * \param TestName Name of test for logging purposes
  */
-void    UtTest_Add(void (*Test)(void), void (*Setup)(void), void (*Teardown)(void), const char *TestName);
+void UtTest_Add(void (*Test)(void), void (*Setup)(void), void (*Teardown)(void), const char *TestName);
 
 /**
  * \brief Registers a setup function
@@ -72,7 +77,6 @@ void UtTest_AddSetup(void (*Setup)(void), const char *SequenceName);
  */
 void UtTest_AddTeardown(void (*Teardown)(void), const char *SequenceName);
 
-
 /**
  * \brief Early initialization function
  *
@@ -80,7 +84,6 @@ void UtTest_AddTeardown(void (*Teardown)(void), const char *SequenceName);
  * This should be called before any other API.
  */
 void UtTest_EarlyInit(void);
-
 
 /**
  * \brief Execute all registered tests
@@ -98,4 +101,3 @@ void UtTest_Run(void);
 void UtTest_Setup(void);
 
 #endif
-

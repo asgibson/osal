@@ -28,7 +28,9 @@
 #ifndef GENERIC_LINUX_BSP_INTERNAL_H_
 #define GENERIC_LINUX_BSP_INTERNAL_H_
 
-#include "osapi.h"
+#include "osapi-common.h"
+#include "osapi-bsp.h"
+#include "osapi-error.h"
 #include "bsp-impl.h"
 
 /*
@@ -36,7 +38,7 @@
 */
 typedef struct
 {
-    bool    EnableTermControl;    /**< Will be set "true" when invoked from a TTY device, false otherwise */
+    bool EnableTermControl; /**< Will be set "true" when invoked from a TTY device, false otherwise */
 } OS_BSP_GenericLinuxGlobalData_t;
 
 /*
@@ -44,4 +46,4 @@ typedef struct
  */
 extern OS_BSP_GenericLinuxGlobalData_t OS_BSP_GenericLinuxGlobal;
 
-#endif /* GENERIC_LINUX_BSP_INTERNAL_H_ */
+#endif /* GENERIC_LINUX_BSP_INTERNAL_H */

@@ -32,8 +32,8 @@
  * can be executed.
  */
 
-#ifndef __OSAPI_UTSTUB_INTERNAL_H_
-#define __OSAPI_UTSTUB_INTERNAL_H_
+#ifndef OSAPI_UTSTUB_INTERNAL_H
+#define OSAPI_UTSTUB_INTERNAL_H
 
 /*
  * Commonly used C library headers
@@ -43,36 +43,19 @@
 /*
  * Include all relevant OSAPI (public) and UT-assert headers
  */
-#include "osapi.h"
+#include "common_types.h"
+#include "osapi-error.h"
+#include "osapi-constants.h"
+#include "osapi-idmap.h"
 #include "utstubs.h"
 #include "utbsp.h"
 #include "utassert.h"
 #include "uttools.h"
 
-
-
-typedef enum
-{
-    UT_OBJTYPE_NONE = 0,
-    UT_OBJTYPE_TASK,
-    UT_OBJTYPE_QUEUE,
-    UT_OBJTYPE_COUNTSEM,
-    UT_OBJTYPE_BINSEM,
-    UT_OBJTYPE_MUTEX,
-    UT_OBJTYPE_TIMECB,
-    UT_OBJTYPE_MODULE,
-    UT_OBJTYPE_FILESTREAM,
-    UT_OBJTYPE_SOCKET,
-    UT_OBJTYPE_TIMEBASE,
-    UT_OBJTYPE_DIR,
-    UT_OBJTYPE_FILESYS,
-    UT_OBJTYPE_MAX
-} UT_ObjType_t;
-
 /*
  * A constant to use in stubs where no other value is applicable
  */
-#define UT_STUB_FAKE_OBJECT_ID     ((osal_id_t){0xDEADBEEFU})
+#define UT_STUB_FAKE_OBJECT_ID ((osal_id_t) {0xDEADBEEFU})
 
 /*
  * Size of the bitmask for the OSAL fake object ID validity table
@@ -84,14 +67,13 @@ typedef enum
  * (Default value of 16 allows for up to 128 objects to be created in
  * a single test case, far more than anything I've seen yet)
  */
-#define OSAL_MAX_VALID_PER_TYPE     16
+#define OSAL_MAX_VALID_PER_TYPE 16
 
 typedef struct
 {
     uint32 LastIssueNumber;
-    uint8 ValidBits[OSAL_MAX_VALID_PER_TYPE];
+    uint8  ValidBits[OSAL_MAX_VALID_PER_TYPE];
 } UT_ObjTypeState_t;
-
 
 /**
  * Table lookup for the maximum number of OSAL objects by object type
@@ -101,18 +83,12 @@ extern const uint32 UT_MAXOBJS[];
 /*
  * Helper function - "allocate" a fake object ID of the given type
  */
-osal_id_t UT_AllocStubObjId(UT_ObjType_t ObjType);
+osal_id_t UT_AllocStubObjId(osal_objtype_t ObjType);
 
 /*
  * Helper function - "deallocate" a fake object ID of the given type
  */
-void UT_DeleteStubObjId(UT_ObjType_t ObjType, osal_id_t ObjId);
-
-/*
- * Helper function - Report any queue objects found open
- * (for compatibility with CFE tests, only checks queues)
- */
-void UT_CheckForOpenSockets(void);
+void UT_DeleteStubObjId(osal_objtype_t ObjType, osal_id_t ObjId);
 
 /*
  * Helper function - Clear all OSAL UT stub objects
@@ -124,9 +100,7 @@ void UT_ClearAllStubObjects(void);
  * Compose/Decompose a unit test object ID from an index and type.
  * This is the UT-specific version not related to the OSAL runtime version.
  */
-void UT_ObjIdCompose(uint32 indx, UT_ObjType_t objtype, osal_id_t *id);
-void UT_ObjIdDecompose(osal_id_t id, uint32 *indx, UT_ObjType_t *objtype);
+void UT_ObjIdCompose(uint32 indx, osal_objtype_t objtype, osal_id_t *id);
+void UT_ObjIdDecompose(osal_id_t id, uint32 *indx, osal_objtype_t *objtype);
 
 #endif
-
-

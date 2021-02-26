@@ -19,8 +19,8 @@
  */
 
 /* OSAL coverage stub basic data types */
-#ifndef _OSAL_STUB_BASETYPES_H_
-#define _OSAL_STUB_BASETYPES_H_
+#ifndef OCS_BASETYPES_H
+#define OCS_BASETYPES_H
 
 /*
  * NOTE: These header files are intentionally _not_ overridden
@@ -31,11 +31,9 @@
  * potential re-mapping (#define) statements are done.
  */
 
-#include <stddef.h>   /* for correct size_t and ptrdiff_t types */
-#include <stdint.h>   /* for correct fixed-width integer types */
-#include <limits.h>   /* for correct INT_MAX, etc. */
-#include <stdbool.h>  /* for correct boolean semantics */
+#include <stddef.h>  /* for correct size_t and ptrdiff_t types */
+#include <stdint.h>  /* for correct fixed-width integer types */
+#include <limits.h>  /* for correct INT_MAX, etc. */
+#include <stdbool.h> /* for correct boolean semantics */
 
-
-#endif /* _OSAL_STUB_BASETYPES_H_ */
-
+#endif /*  OCS_BASETYPES_H */

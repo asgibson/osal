@@ -32,17 +32,17 @@
  * can be executed.
  */
 
+#include "osapi-dir.h" /* OSAL public API for this subsystem */
 #include "utstub-helpers.h"
 
-
-UT_DEFAULT_STUB(OS_DirAPI_Init,(void))
+UT_DEFAULT_STUB(OS_DirAPI_Init, (void))
 
 /*****************************************************************************
  *
  * Stub for OS_mkdir() function
  *
  *****************************************************************************/
-int32 OS_mkdir (const char *path, uint32 access)
+int32 OS_mkdir(const char *path, uint32 access)
 {
     UT_Stub_RegisterContext(UT_KEY(OS_mkdir), path);
     UT_Stub_RegisterContextGenericArg(UT_KEY(OS_mkdir), access);
@@ -59,7 +59,7 @@ int32 OS_mkdir (const char *path, uint32 access)
  * Stub for OS_rmdir() function
  *
  *****************************************************************************/
-int32  OS_rmdir (const char *path)
+int32 OS_rmdir(const char *path)
 {
     UT_Stub_RegisterContext(UT_KEY(OS_rmdir), path);
 
@@ -69,8 +69,6 @@ int32  OS_rmdir (const char *path)
 
     return Status;
 }
-
-
 
 /*****************************************************************************
  *
@@ -88,13 +86,12 @@ int32 OS_DirectoryOpen(osal_id_t *dir_id, const char *path)
 
     if (Status == OS_SUCCESS)
     {
-        *dir_id = UT_AllocStubObjId(UT_OBJTYPE_DIR);
+        *dir_id = UT_AllocStubObjId(OS_OBJECT_TYPE_OS_DIR);
     }
     else
     {
         *dir_id = UT_STUB_FAKE_OBJECT_ID;
     }
-
 
     return Status;
 }
@@ -114,7 +111,7 @@ int32 OS_DirectoryClose(osal_id_t dir_id)
 
     if (Status == OS_SUCCESS)
     {
-        UT_DeleteStubObjId(UT_OBJTYPE_DIR, dir_id);
+        UT_DeleteStubObjId(OS_OBJECT_TYPE_OS_DIR, dir_id);
     }
 
     return Status;
@@ -146,8 +143,8 @@ int32 OS_DirectoryRead(osal_id_t dir_id, os_dirent_t *dirent)
     UT_Stub_RegisterContextGenericArg(UT_KEY(OS_DirectoryRead), dir_id);
     UT_Stub_RegisterContext(UT_KEY(OS_DirectoryRead), dirent);
 
-    int32 Status;
-    uint32 CopySize;
+    int32  Status;
+    size_t CopySize;
 
     Status = UT_DEFAULT_IMPL(OS_DirectoryRead);
 
@@ -162,5 +159,3 @@ int32 OS_DirectoryRead(osal_id_t dir_id, os_dirent_t *dirent)
 
     return Status;
 }
-
-

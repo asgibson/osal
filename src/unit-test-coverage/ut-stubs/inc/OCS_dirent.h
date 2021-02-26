@@ -19,8 +19,8 @@
  */
 
 /* OSAL coverage stub replacement for dirent.h */
-#ifndef _OSAL_STUB_DIRENT_H_
-#define _OSAL_STUB_DIRENT_H_
+#ifndef OCS_DIRENT_H
+#define OCS_DIRENT_H
 
 #include <OCS_basetypes.h>
 
@@ -32,24 +32,20 @@
 /* types normally defined in dirent.h */
 /* ----------------------------------------- */
 
-typedef struct OCS_DIR           OCS_DIR;
+typedef struct OCS_DIR OCS_DIR;
 
 struct OCS_dirent
 {
     char d_name[4];
 };
 
-
-
 /* ----------------------------------------- */
 /* prototypes normally declared in dirent.h */
 /* ----------------------------------------- */
 
-extern int OCS_closedir (OCS_DIR * dirp);
-extern OCS_DIR *OCS_opendir (const char * name);
-extern struct OCS_dirent *OCS_readdir (OCS_DIR * dirp);
-extern void OCS_rewinddir (OCS_DIR * dirp);
+extern int                OCS_closedir(OCS_DIR *dirp);
+extern OCS_DIR *          OCS_opendir(const char *name);
+extern struct OCS_dirent *OCS_readdir(OCS_DIR *dirp);
+extern void               OCS_rewinddir(OCS_DIR *dirp);
 
-
-#endif /* _OSAL_STUB_DIRENT_H_ */
-
+#endif /*  OCS_DIRENT_H */

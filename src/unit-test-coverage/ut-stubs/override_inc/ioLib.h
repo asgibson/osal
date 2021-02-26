@@ -19,20 +19,18 @@
  */
 
 /* OSAL coverage stub replacement for ioLib.h */
-#ifndef _OSAL_OVERRIDE_IOLIB_H_
-#define _OSAL_OVERRIDE_IOLIB_H_
+#ifndef OSAL_OVERRIDE_IOLIB_H
+#define OSAL_OVERRIDE_IOLIB_H
 
 #include <OCS_ioLib.h>
 #include <vxWorks.h>
-
 
 /* ----------------------------------------- */
 /* mappings for declarations in ioLib.h */
 /* ----------------------------------------- */
 
-#define FIOCHKDSK   OCS_FIOCHKDSK
-#define FIOUNMOUNT  OCS_FIOUNMOUNT
-#define ioctl       OCS_ioctl
+#define FIOCHKDSK  OCS_FIOCHKDSK
+#define FIOUNMOUNT OCS_FIOUNMOUNT
+#define ioctl      OCS_ioctl
 
-
-#endif /* _OSAL_OVERRIDE_IOLIB_H_ */
+#endif /* OSAL_OVERRIDE_IOLIB_H */
