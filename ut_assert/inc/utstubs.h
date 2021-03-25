@@ -118,6 +118,15 @@ typedef int32 (*UT_VaHookFunc_t)(void *UserObj, int32 StubRetcode, uint32 CallCo
 void UT_ResetState(UT_EntryKey_t FuncKey);
 
 /**
+ * A value to indicate if the currently running stub's behavior after
+ * a hook call should be run or not.
+ *
+ * \param Retcode The boolean value indicating the override.  When 'true'
+ * indicates remaining stub code should not be run, it is in override.
+ */
+bool UT_StubIsOverridden(UT_EntryKey_t FuncKey);
+
+/**
  * Add a deferred return code entry for the given stub function
  *
  * A deferred ("count down") return code for the stub function will be
@@ -238,6 +247,19 @@ void UT_ClearForceFail(UT_EntryKey_t FuncKey);
  * \param UserObj  Arbitrary user data object to pass to the hook function
  */
 void UT_SetHookFunction(UT_EntryKey_t FuncKey, UT_HookFunc_t HookFunc, void *UserObj);
+
+/**
+ * Set a Hook function for a particular call, but override any remaining stub functionality
+ *
+ * This triggers a callback to a user-defined function when the stub is invoked.
+ * Upon return to the original stub the OverrideStub will be true and any remaining
+ * code lines in stub (that are purposefully bypassed by the stub) will not be executed.
+ *
+ * \param FuncKey  The stub function to add the hook to.
+ * \param HookFunc User defined hook function.  Set NULL to delete/clear an entry.
+ * \param UserObj  Arbitrary user data object to pass to the hook function
+ */
+void UT_SetHookOverrideStubFunction(UT_EntryKey_t FuncKey, UT_HookFunc_t HookFunc, void *UserObj);
 
 /**
  * Set a variable-argument Hook function for a particular call
